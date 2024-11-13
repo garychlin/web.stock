@@ -1,6 +1,6 @@
 <?php
-// 設定股票代號
-$stock_code = '2330'; // 例如台積電的股票代號
+// 確保從 GET 請求中獲取股票代號
+$stock_code = isset($_GET['stockCode']) ? $_GET['stockCode'] : '2330'; // 默認為台積電的股票代號
 
 // 使用完整的 Python 路徑調用腳本
 $command = escapeshellcmd("/usr/local/bin/python /Users/garylin/Projects-Cursor/stock/fetch_stock_twstock.py {$stock_code}"); // 使用 python 調用腳本
@@ -35,3 +35,36 @@ if ($data) {
     echo "<h3>無法獲取數據</h3>";
 }
 ?>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div>
+    <canvas id="priceChart" width="400" height="200"></canvas>
+</div>
+
+<script>
+    const ctx = document.getElementById('priceChart').getContext('2d');
+    const prices = <?php echo json_encode($data['price']); ?>; // 将价格数据传递给 JavaScript
+    const labels = prices.map((_, index) => index + 1); // 创建标签
+
+    const priceChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '股價',
+                data: prices,
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 2,
+                fill: false
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
