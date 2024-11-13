@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>維持率計算</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        /* 自定义样式 */
+        .modal-body {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>股票維持率計算</h1>
+        
+        <table class="table table-striped table-sm">
+            <thead>
+                <tr>
+                    <th>股票</th>
+                    <th>代號</th>
+                    <th>狀態</th>
+                    <th id="priceHeader">股價</th>
+                    <th>股數</th>
+                    <th>市值</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>世芯 KY</td>
+                    <td>3661</td>
+                    <td>0905 質借中</td>
+                    <td class="price-cell" data-code="3661"></td>
+                    <td>2000</td>
+                    <td class="market-value" data-code="3661"></td>
+                </tr>
+                <tr>
+                    <td>愛普</td>
+                    <td>6531</td>
+                    <td>0905 質借中</td>
+                    <td class="price-cell" data-code="6531"></td>
+                    <td>4000</td>
+                    <td class="market-value" data-code="6531"></td>
+                </tr>
+                <tr>
+                    <td>兆利</td>
+                    <td>3548</td>
+                    <td>0905 質借中</td>
+                    <td class="price-cell" data-code="3548"></td>
+                    <td>4000</td>
+                    <td class="market-value" data-code="3548"></td>
+                </tr>
+                <tr>
+                    <td>玉晶光</td>
+                    <td>3406</td>
+                    <td>0905 質借中</td>
+                    <td class="price-cell" data-code="3406"></td>
+                    <td>2000</td>
+                    <td class="market-value" data-code="3406"></td>
+                </tr>
+                <tr>
+                    <td>高力</td>
+                    <td>8996</td>
+                    <td>0905 質借中</td>
+                    <td class="price-cell" data-code="8996"></td>
+                    <td>2000</td>
+                    <td class="market-value" data-code="8996"></td>
+                </tr>
+                <tr>
+                    <td>創意</td>
+                    <td>3443</td>
+                    <td>1023 質借中</td>
+                    <td class="price-cell" data-code="3443"></td>
+                    <td>1000</td>
+                    <td class="market-value" data-code="3443"></td>
+                </tr>
+                <tr>
+                    <td>士電</td>
+                    <td>1503</td>
+                    <td>1023 質借中</td>
+                    <td class="price-cell" data-code="1503"></td>
+                    <td>3000</td>
+                    <td class="market-value" data-code="1503"></td>
+                </tr>
+                <tr>
+                    <td>中興電</td>
+                    <td>1513</td>
+                    <td>1023 質借中</td>
+                    <td class="price-cell" data-code="1513"></td>
+                    <td>6000</td>
+                    <td class="market-value" data-code="1513"></td>
+                </tr>
+                <tr>
+                    <td>*雙鴻</td>
+                    <td>3324</td>
+                    <td>0909 擔保中</td>
+                    <td class="price-cell" data-code="3324"></td>
+                    <td>2000</td>
+                    <td class="market-value" data-code="3324"></td>
+                </tr>
+                <tr>
+                    <td>*奇鋐</td>
+                    <td>3017</td>
+                    <td>0909 擔保中</td>
+                    <td class="price-cell" data-code="3017"></td>
+                    <td>2000</td>
+                    <td class="market-value" data-code="3017"></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p>總借款金額: 6,700,000 元</p>
+        <button id="calculateButton" class="btn btn-primary">計算總維持率</button>
+
+        <!-- Modal -->
+        <div class="modal fade" id="loadingModal" tabindex="-1" role="dialog" aria-labelledby="loadingModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="loadingModalLabel">查詢中...</h5>
+                    </div>
+                    <div class="modal-body">
+                        <p>請稍候，正在查詢股價...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4" id="result">
+            <!-- 這裡將顯示計算結果 -->
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('calculateButton').addEventListener('click', function() {
+            const loanAmount = 6700000; // 固定借款金額
+            const stockData = [
+                { code: '3661', shares: 2000 },
+                { code: '6531', shares: 4000 },
+                { code: '3548', shares: 4000 },
+                { code: '3406', shares: 2000 },
+                { code: '8996', shares: 2000 },
+                { code: '3443', shares: 1000 },
+                { code: '1503', shares: 3000 },
+                { code: '1513', shares: 6000 },
+                { code: '3324', shares: 2000 }, // 新增股票
+                { code: '3017', shares: 2000 }  // 新增股票
+            ];
+
+            // 显示查询中模态框
+            $('#loadingModal').modal('show');
+            document.getElementById('result').innerHTML = ''; // 清空结果区域
+
+            // 使用完整的 Python 路徑調用腳本
+            const command = `/usr/local/bin/python /Users/garylin/Projects-Cursor/stock/fetch_stock_twstock.py ${stockData.map(stock => stock.code).join(' ')}`;
+            fetch('maintenance_rate_exec.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ command: command, loanAmount: loanAmount })
+            })
+            .then(response => response.json())
+            .then(data => {
+                let totalMarketValue = 0; // 初始化总市值
+                const today = new Date().toISOString().split('T')[0].replace(/-/g, '/'); // 获取今天的日期
+                document.getElementById('priceHeader').textContent = `${today} 股價`; // 更新表头日期
+
+                for (const stock of stockData) {
+                    const price = data.prices[stock.code];
+                    // 填充股价到表格
+                    const priceCell = document.querySelector(`.price-cell[data-code="${stock.code}"]`);
+                    if (priceCell) {
+                        priceCell.textContent = isNaN(price) ? "無法獲取" : price; // 填充股价
+                    }
+                    // 计算市值并填充
+                    const marketValueCell = document.querySelector(`.market-value[data-code="${stock.code}"]`);
+                    if (marketValueCell) {
+                        const marketValue = !isNaN(price) ? price * stock.shares : 0;
+                        marketValueCell.textContent = marketValue.toLocaleString(); // 填充市值
+                        totalMarketValue += marketValue; // 累加总市值
+                    }
+                }
+
+                // 计算总维持率
+                if (loanAmount > 0) {
+                    const totalMaintenanceRate = (totalMarketValue / loanAmount) * 100;
+                    document.getElementById('result').innerHTML = `<h2>總維持率: ${totalMaintenanceRate.toFixed(2)}%</h2>`;
+                } else {
+                    document.getElementById('result').innerHTML = "<h3>借款金額無效</h3>";
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('result').innerHTML = "<h3>無法獲取數據</h3>";
+            })
+            .finally(() => {
+                // 隐藏查询中模态框
+                $('#loadingModal').modal('hide');
+            });
+        });
+    </script>
+
+    <!-- Bootstrap JS (需要在页面底部引入) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
