@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinMind 股票數據</title>
+    <!-- 引入 Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>FinMind 股票數據</h1>
+        <div id="apiUrl" class="alert alert-info"></div> <!-- 用於顯示 API URL -->
+        <div id="result" class="mt-3"></div>
+
+        <?php
+        // 獲取 URL 中的股票代號和日期範圍
+        $stockCode = $_GET['stockCode'] ?? '2330'; // 預設為 2330
+        $startDate = $_GET['startDate'] ?? '2024-11-13'; // 預設開始日期
+        $endDate = $_GET['endDate'] ?? '2021-11-13'; // 預設結束日期
+        $apiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRlIjoiMjAyNC0xMS0xMyAxNDowNzo1MCIsInVzZXJfaWQiOiJnYXJ5Y2hsaW4iLCJpcCI6IjEyMi4yNTQuMTMuMTcxIn0.rzOh4E0xJ_fA8k0iTTYbK4H5cdfYla8ZPdKGHzkrV4I"; // FinMind API 金鑰
+        $apiUrl = "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id={$stockCode}&start_date={$startDate}&end_date={$endDate}&token={$apiKey}";
+
+        // 顯示 API URL，並可點擊開啟新視窗
+        echo "<div id='apiUrl'>API URL: <a href='{$apiUrl}' target='_blank'>{$apiUrl}</a></div>";
+
+        // 使用 cURL 獲取數據
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $apiUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $response = curl_exec($ch);
+
+        if ($response === false) {
+            echo "cURL 錯誤: " . curl_error($ch);
+        } else {
+            // 檢查原始返回數據
+            var_dump($response); // 檢查原始返回數據
+
+            // 解析 JSON
+            $data = json_decode($response, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                echo "JSON 解碼錯誤: " . json_last_error_msg();
+            } elseif (isset($data['data']) && count($data['data']) > 0) {
+                displayData($data['data']);
+            } else {
+                echo "<div class='alert alert-warning'>未找到股票數據，請檢查股票代號和日期範圍。</div>";
+            }
+        }
+
+        curl_close($ch);
+
+        // 顯示數據的函數
+        function displayData($stockData) {
+            echo "<div id='result'><h2>股票代號: {$_GET['stockCode']}</h2>";
+            foreach ($stockData as $record) {
+                echo "<div class='card mb-2'>";
+                echo "<div class='card-body'>";
+                echo "<h5 class='card-title'>日期: {$record['date']}</h5>";
+                echo "<p class='card-text'>收盤價: {$record['close']}</p>";
+                echo "<p class='card-text'>成交量: {$record['volume']}</p>";
+                echo "</div></div>";
+            }
+            echo "</div>";
+        }
+        ?>
+    </div>
+
+    <!-- 引入 Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

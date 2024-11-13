@@ -1,0 +1,37 @@
+<?php
+// 設定股票代號
+$stock_code = '2330'; // 例如台積電的股票代號
+
+// 使用完整的 Python 路徑調用腳本
+$command = escapeshellcmd("/usr/local/bin/python /Users/garylin/Projects-Cursor/stock/fetch_stock_twstock.py {$stock_code}"); // 使用 python 調用腳本
+$output = shell_exec($command); // 執行命令並獲取輸出
+
+if ($output === null) {
+    die("無法執行 Python 腳本");
+}
+
+// 處理返回的數據
+$data = json_decode($output, true); // 將 JSON 解析為 PHP 陣列
+if ($data) {
+    echo "<h2>股票代號: " . htmlspecialchars($data['stock_code']) . "</h2>";
+    
+    // 檢查價格是否為空
+    if (!empty($data['price'])) {
+        // 顯示最新的股價
+        $latest_price = end($data['price']); // 獲取最新的價格
+        echo "<h3>最新股價: " . htmlspecialchars($latest_price) . "</h3>";
+        
+        // 顯示所有價格
+        echo "<h4>歷史股價:</h4>";
+        echo "<ul>";
+        foreach ($data['price'] as $price) {
+            echo "<li>" . htmlspecialchars($price) . "</li>";
+        }
+        echo "</ul>";
+    } else {
+        echo "<h3>無法獲取股價資料</h3>";
+    }
+} else {
+    echo "<h3>無法獲取數據</h3>";
+}
+?>

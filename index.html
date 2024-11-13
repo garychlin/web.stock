@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台股數據查詢</title>
+</head>
+<body>
+    <h1>查詢台股數據</h1>
+    <?php
+        //$actionUrl = "fetch_stock_tej.html";
+        //$actionUrl = "fetch_stock_finmind.html";
+        //$actionUrl = "fetch_stock_crawl.html";
+        $actionUrl = "fetch_stock_twstock.html"; 
+    ?>
+    <form action="<?php echo $actionUrl; ?>" method="get">
+        <label for="stockCode">股票代號:</label>
+        <input type="text" id="stockCode" name="stockCode" placeholder="請輸入股票代號" value="2330" required /> <!-- 預設為 2330 -->
+        <button type="submit">確定</button>
+    </form>
+</body>
+</html>
