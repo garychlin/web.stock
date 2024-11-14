@@ -10,9 +10,18 @@
         .modal-body {
             text-align: center;
         }
+        /* 设置链接颜色为黑色 */
+        a {
+            color: black; /* 设置链接颜色为黑色 */
+            text-decoration: none; /* 可选：去掉下划线 */
+        }
+        a:hover {
+            text-decoration: underline; /* 可选：鼠标悬停时显示下划线 */
+        }
     </style>
 </head>
 <body>
+    <?php include 'navigator.html'; ?>
     <div class="container mt-5">
         <h1>股票維持率計算</h1>
         
@@ -29,81 +38,73 @@
             </thead>
             <tbody>
                 <tr>
-                    <td>世芯 KY</td>
-                    <td>3661</td>
+                    <td><a href="fetch_stock_twstock.html?stockCode=3661" target="_blank">世芯 KY</a></td>
+                    <td><a href="fetch_stock_twstock.html?stockCode=3661" target="_blank">3661</a></td>
                     <td>0905 質借中</td>
                     <td class="price-cell" data-code="3661"></td>
                     <td>2000</td>
                     <td class="market-value" data-code="3661"></td>
                 </tr>
                 <tr>
-                    <td>愛普</td>
-                    <td>6531</td>
+                    <td><a href="fetch_stock_twstock.html?stockCode=6531" target="_blank">愛普</a></td>
+                    <td><a href="fetch_stock_twstock.html?stockCode=6531" target="_blank">6531</a></td>
                     <td>0905 質借中</td>
                     <td class="price-cell" data-code="6531"></td>
                     <td>4000</td>
                     <td class="market-value" data-code="6531"></td>
                 </tr>
                 <tr>
-                    <td>兆利</td>
-                    <td>3548</td>
+                    <td><a href="fetch_stock_twstock.html?stockCode=3548" target="_blank">兆利</a></td>
+                    <td><a href="fetch_stock_twstock.html?stockCode=3548" target="_blank">3548</a></td>
                     <td>0905 質借中</td>
                     <td class="price-cell" data-code="3548"></td>
                     <td>4000</td>
                     <td class="market-value" data-code="3548"></td>
                 </tr>
                 <tr>
-                    <td>玉晶光</td>
-                    <td>3406</td>
+                    <td><a href="fetch_stock_twstock.html?stockCode=3406" target="_blank">玉晶光</a></td>
+                    <td><a href="fetch_stock_twstock.html?stockCode=3406" target="_blank">3406</a></td>
                     <td>0905 質借中</td>
                     <td class="price-cell" data-code="3406"></td>
                     <td>2000</td>
                     <td class="market-value" data-code="3406"></td>
                 </tr>
                 <tr>
-                    <td>高力</td>
-                    <td>8996</td>
+                    <td><a href="fetch_stock_twstock.html?stockCode=8996" target="_blank">高力</a></td>
+                    <td><a href="fetch_stock_twstock.html?stockCode=8996" target="_blank">8996</a></td>
                     <td>0905 質借中</td>
                     <td class="price-cell" data-code="8996"></td>
                     <td>2000</td>
                     <td class="market-value" data-code="8996"></td>
                 </tr>
                 <tr>
-                    <td>創意</td>
-                    <td>3443</td>
+                    <td><a href="fetch_stock_twstock.html?stockCode=3443" target="_blank">創意</a></td>
+                    <td><a href="fetch_stock_twstock.html?stockCode=3443" target="_blank">3443</a></td>
                     <td>1023 質借中</td>
                     <td class="price-cell" data-code="3443"></td>
                     <td>1000</td>
                     <td class="market-value" data-code="3443"></td>
                 </tr>
                 <tr>
-                    <td>士電</td>
-                    <td>1503</td>
+                    <td><a href="fetch_stock_twstock.html?stockCode=1503" target="_blank">士電</a></td>
+                    <td><a href="fetch_stock_twstock.html?stockCode=1503" target="_blank">1503</a></td>
                     <td>1023 質借中</td>
                     <td class="price-cell" data-code="1503"></td>
                     <td>3000</td>
                     <td class="market-value" data-code="1503"></td>
                 </tr>
                 <tr>
-                    <td>中興電</td>
-                    <td>1513</td>
+                    <td><a href="fetch_stock_twstock.html?stockCode=3324" target="_blank">中興電</a></td>
+                    <td><a href="fetch_stock_twstock.html?stockCode=3324" target="_blank">3324</a></td>
                     <td>1023 質借中</td>
-                    <td class="price-cell" data-code="1513"></td>
-                    <td>6000</td>
-                    <td class="market-value" data-code="1513"></td>
-                </tr>
-                <tr>
-                    <td>*雙鴻</td>
-                    <td>3324</td>
-                    <td>0909 擔保中</td>
                     <td class="price-cell" data-code="3324"></td>
                     <td>2000</td>
                     <td class="market-value" data-code="3324"></td>
                 </tr>
                 <tr>
-                    <td>*奇鋐</td>
-                    <td>3017</td>
-                    <td>0909 擔保中</td>
+                    <td><a href="fetch_stock_twstock.html?stockCode=3017" target="_blank">奇鋐</a></td>
+                    <td><a href="fetch_stock_twstock.html?stockCode=3017" target="_blank">3017</a></td>
+                    <td>1023 質借中</td>
                     <td class="price-cell" data-code="3017"></td>
                     <td>2000</td>
                     <td class="market-value" data-code="3017"></td>
@@ -183,15 +184,15 @@
                         const userInputPrice = inputPrice && inputPrice.value ? parseFloat(inputPrice.value) : null; // 用户输入的股价
 
                         // 使用用户输入的股价，如果没有输入则使用 API 获取的股价
-                        const price = userInputPrice !== null ? userInputPrice : priceFromAPI;
+                        const price = userInputPrice !== null ? userInputPrice : priceFromAPI.price;
 
                         if (priceCell) {
-                            if (priceFromAPI === null) {
+                            if (priceFromAPI === null || priceFromAPI.price === null) {
                                 // 如果股价未获取，显示输入框
                                 priceCell.innerHTML = `<input type="number" id="input-${stock.code}" placeholder="輸入股價" />`;
                             } else {
                                 // 否则显示获取到的股价
-                                priceCell.textContent = price; // 直接显示获取到的股价
+                                priceCell.textContent = priceFromAPI.price; // 直接显示获取到的股价
                             }
                         }
 
@@ -241,12 +242,26 @@
                             priceCell.innerHTML = `<input type="number" id="input-${stock.code}" value="${userInputPrice}" placeholder="輸入股價" />`;
                         } else {
                             // 否则显示获取到的股价
-                            priceCell.textContent = price; // 直接显示获取到的股价
+                            priceCell.textContent = price.price; // 直接显示获取到的股价
                         }
                     }
 
                     // 计算市值并累加
-                    const marketValue = price * stock.shares;
+                    let marketValue;
+
+                    // 检查 price 的类型
+                    if (typeof price === 'object' && price !== null && 'price' in price) {
+                        // 如果 price 是对象且包含 price 属性，则使用该属性的值
+                        marketValue = price.price * stock.shares;
+                    } else if (typeof price === 'number') {
+                        // 如果 price 是数值，则直接使用
+                        marketValue = price * stock.shares;
+                    } else {
+                        // 如果 price 既不是对象也不是数值，则设置为 0
+                        marketValue = 0;
+                    }
+
+                    // 累加总市值
                     totalMarketValue += marketValue; // 累加总市值
 
                     // 更新市值显示

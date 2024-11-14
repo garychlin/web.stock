@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
 <body>
+    <?php include 'navigator.html'; ?>
+
     <!-- Modal -->
     <div class="modal fade" id="loadingModal" tabindex="-1" role="dialog" aria-labelledby="loadingModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
@@ -47,41 +49,49 @@
                 data: { stockCode: stockCode },
                 dataType: 'json',
                 success: function(data) {
-                    // 处理返回的数据
+                    // 调试输出，查看返回的数据
+                    console.log('Returned data:', data);
                     if (data.error) {
                         $('#result').html(`<h3>錯誤: ${data.error}</h3>`);
                     } else {
-                        $('#result').html(`<h2>股票代號: ${data.stock_code}</h2>`);
-                        const latestPrice = data.price[data.price.length - 1];
-                        $('#result').append(`<h3>最新股價: ${latestPrice}</h3>`);
-                        $('#result').append(`<h4>歷史股價:</h4><p>${data.price.join(' / ')}</p>`);
+                        // 假设 stockCode 是你要查询的股票代码
+                        const stockData = data[stockCode]; // 使用股票代码作为键获取数据
 
-                        // 生成日期数组
-                        const prices = data.price;
-                        const labels = generateDates(prices.length);
+                        if (stockData) {
+                            $('#result').html(`<h2>股票代號: ${stockData.stock_code}</h2>`); // 访问 stock_code
+                            const latestPrice = stockData.price[stockData.price.length - 1]; // 获取最新价格
+                            $('#result').append(`<h3>最新股價: ${latestPrice}</h3>`);
+                            $('#result').append(`<h4>歷史股價:</h4><p>${stockData.price.join(' / ')}</p>`);
 
-                        // 绘制图表
-                        const ctx = document.getElementById('priceChart').getContext('2d');
-                        const priceChart = new Chart(ctx, {
-                            type: 'line',
-                            data: {
-                                labels: labels,
-                                datasets: [{
-                                    label: '股價',
-                                    data: prices,
-                                    borderColor: 'rgba(75, 192, 192, 1)',
-                                    borderWidth: 2,
-                                    fill: false
-                                }]
-                            },
-                            options: {
-                                scales: {
-                                    y: {
-                                        beginAtZero: true
+                            // 生成日期数组
+                            const prices = stockData.price;
+                            const labels = generateDates(prices.length);
+
+                            // 绘制图表
+                            const ctx = document.getElementById('priceChart').getContext('2d');
+                            const priceChart = new Chart(ctx, {
+                                type: 'line',
+                                data: {
+                                    labels: labels,
+                                    datasets: [{
+                                        label: '股價',
+                                        data: prices,
+                                        borderColor: 'rgba(75, 192, 192, 1)',
+                                        borderWidth: 2,
+                                        fill: false
+                                    }]
+                                },
+                                options: {
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true
+                                        }
                                     }
                                 }
-                            }
-                        });
+                            });
+                        } else {
+                            $('#result').html(`<h3>無法獲取股票數據</h3>`);
+                        }
                     }
                 },
                 error: function(xhr, status, error) {

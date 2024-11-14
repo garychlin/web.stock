@@ -4,24 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>台股數據查詢</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        .input-group {
+            margin-top: 20px;
+        }
+        .btn-custom {
+            border-radius: 20px; /* 圆角 */
+            background-color: #007bff; /* 按钮底色 */
+            color: white; /* 按钮文字颜色 */
+        }
+    </style>
 </head>
 <body>
-    <h1>查詢台股數據</h1>
-    <?php
-        //$actionUrl = "fetch_stock_tej.html";
-        //$actionUrl = "fetch_stock_finmind.html";
-        //$actionUrl = "fetch_stock_crawl.html";
-        $actionUrl = "fetch_stock_twstock.html"; 
-    ?>
-    <form action="<?php echo $actionUrl; ?>" method="get">
-        <label for="stockCode">股票代號:</label>
-        <input type="text" id="stockCode" name="stockCode" placeholder="請輸入股票代號" value="2330" required /> <!-- 預設為 2330 -->
-        <button type="submit">確定</button>
-    </form>
+    <?php include 'navigator.html'; ?>
 
-    <!-- 添加链接到维护率计算页面 -->
-    <div style="margin-top: 20px;">
-        <a href="maintenance_rate.html" class="btn btn-primary">計算維持率</a>
+    <div class="container mt-5">
+        <h1>查詢台股數據</h1>
+        <form action="fetch_stock_twstock.html" method="get">
+            <div class="input-group">
+                <input type="text" id="stockCode" name="stockCode" class="form-control" placeholder="請輸入股票代號" value="2330" required />
+                <div class="input-group-append">
+                    <button type="submit" class="btn btn-custom">查詢</button> <!-- 修改按钮文本 -->
+                </div>
+            </div>
+        </form>
     </div>
 </body>
 </html>

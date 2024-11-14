@@ -2,8 +2,8 @@
 // 确保从 GET 请求中获取股票代号
 $stock_code = isset($_GET['stockCode']) ? $_GET['stockCode'] : '2330'; // 默认为台积电的股票代号
 
-// 使用完整的 Python 路径调用脚本
-$command = escapeshellcmd("/usr/local/bin/python /Users/garylin/Projects-Cursor/stock/fetch_stock_twstock.py {$stock_code}"); // 使用 python 调用脚本
+// 使用完整的 Python 路径调用脚本，增加 'history' 参数
+$command = escapeshellcmd("/usr/local/bin/python /Users/garylin/Projects-Cursor/stock/fetch_stock_twstock.py history {$stock_code}"); // 使用 python 调用脚本
 $output = shell_exec($command); // 执行命令并获取输出
 
 if ($output === null) {
@@ -15,6 +15,9 @@ if ($output === null) {
 
 // 去除输出中的多余空白字符
 $output = trim($output);
+
+// 在处理返回的数据之前添加调试输出
+error_log("Python script output: " . $output);
 
 // 处理返回的数据
 $data = json_decode($output, true); // 将 JSON 解析为 PHP 数组
