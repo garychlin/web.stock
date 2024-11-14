@@ -10,9 +10,19 @@ if ($output === null) {
     die("無法執行 Python 腳本");
 }
 
+// 去除输出中的多余空白字符
+$output = trim($output);
+
 // 處理返回的數據
 $data = json_decode($output, true); // 將 JSON 解析為 PHP 陣列
-if ($data) {
+if ($data === null) {
+    die("無法解析 JSON: " . json_last_error_msg()); // 输出 JSON 解析错误信息
+}
+
+// 继续处理数据
+if (isset($data['error'])) {
+    echo "<h3>錯誤: " . htmlspecialchars($data['error']) . "</h3>";
+} else {
     echo "<h2>股票代號: " . htmlspecialchars($data['stock_code']) . "</h2>";
     
     // 檢查價格是否為空
@@ -21,18 +31,12 @@ if ($data) {
         $latest_price = end($data['price']); // 獲取最新的價格
         echo "<h3>最新股價: " . htmlspecialchars($latest_price) . "</h3>";
         
-        // 顯示所有價格
+        // 顯示所有價格，使用 / 分隔
         echo "<h4>歷史股價:</h4>";
-        echo "<ul>";
-        foreach ($data['price'] as $price) {
-            echo "<li>" . htmlspecialchars($price) . "</li>";
-        }
-        echo "</ul>";
+        echo "<p>" . implode(' / ', array_map('htmlspecialchars', $data['price'])) . "</p>"; // 使用 / 分隔
     } else {
         echo "<h3>無法獲取股價資料</h3>";
     }
-} else {
-    echo "<h3>無法獲取數據</h3>";
 }
 ?>
 
