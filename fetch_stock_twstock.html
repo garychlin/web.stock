@@ -56,16 +56,19 @@
                         $('#result').append(`<h3>最新股價: ${latestPrice}</h3>`);
                         $('#result').append(`<h4>歷史股價:</h4><p>${data.price.join(' / ')}</p>`);
 
+                        // 生成日期数组
+                        const prices = data.price;
+                        const labels = generateDates(prices.length);
+
                         // 绘制图表
                         const ctx = document.getElementById('priceChart').getContext('2d');
-                        const labels = data.price.map((_, index) => index + 1);
                         const priceChart = new Chart(ctx, {
                             type: 'line',
                             data: {
                                 labels: labels,
                                 datasets: [{
                                     label: '股價',
-                                    data: data.price,
+                                    data: prices,
                                     borderColor: 'rgba(75, 192, 192, 1)',
                                     borderWidth: 2,
                                     fill: false
@@ -89,6 +92,30 @@
                     $('#loadingModal').modal('hide');
                 }
             });
+
+            // 生成日期数组的函数
+            function generateDates(numDays) {
+                const dates = [];
+                const today = new Date();
+                let count = 0;
+
+                // 从过去的日期开始生成
+                while (dates.length < numDays) {
+                    const currentDate = new Date(today);
+                    currentDate.setDate(today.getDate() - count); // 向前推算日期
+
+                    // 检查是否是周末
+                    const day = currentDate.getDay();
+                    if (day !== 0 && day !== 6) { // 0 = Sunday, 6 = Saturday
+                        // 格式化日期为 YYYY-MM-DD
+                        const formattedDate = currentDate.toISOString().split('T')[0];
+                        dates.push(formattedDate); // 将日期添加到数组的末尾
+                    }
+                    count++;
+                }
+
+                return dates.reverse(); // 反转数组以从早到晚显示
+            }
         });
     </script>
 </body>
