@@ -1,74 +1,95 @@
-<?php
-// 確保從 GET 請求中獲取股票代號
-$stock_code = isset($_GET['stockCode']) ? $_GET['stockCode'] : '2330'; // 默認為台積電的股票代號
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>股票查詢</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <!-- Modal -->
+    <div class="modal fade" id="loadingModal" tabindex="-1" role="dialog" aria-labelledby="loadingModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="loadingModalLabel">查詢中...</h5>
+                </div>
+                <div class="modal-body">
+                    <p>請稍候，正在查詢股價...</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-// 使用完整的 Python 路徑調用腳本
-$command = escapeshellcmd("/usr/local/bin/python /Users/garylin/Projects-Cursor/stock/fetch_stock_twstock.py {$stock_code}"); // 使用 python 調用腳本
-$output = shell_exec($command); // 執行命令並獲取輸出
+    <div class="container mt-5">
+        <h1>股票查詢結果</h1>
+        <div id="result"></div>
+        <canvas id="priceChart" width="400" height="200"></canvas>
+    </div>
 
-if ($output === null) {
-    die("無法執行 Python 腳本");
-}
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-// 去除输出中的多余空白字符
-$output = trim($output);
+    <script>
+        $(document).ready(function() {
+            // 显示模态框
+            $('#loadingModal').modal('show');
 
-// 處理返回的數據
-$data = json_decode($output, true); // 將 JSON 解析為 PHP 陣列
-if ($data === null) {
-    die("無法解析 JSON: " . json_last_error_msg()); // 输出 JSON 解析错误信息
-}
+            // 获取股票代号
+            const stockCode = new URLSearchParams(window.location.search).get('stockCode') || '2330';
 
-// 继续处理数据
-if (isset($data['error'])) {
-    echo "<h3>錯誤: " . htmlspecialchars($data['error']) . "</h3>";
-} else {
-    echo "<h2>股票代號: " . htmlspecialchars($data['stock_code']) . "</h2>";
-    
-    // 檢查價格是否為空
-    if (!empty($data['price'])) {
-        // 顯示最新的股價
-        $latest_price = end($data['price']); // 獲取最新的價格
-        echo "<h3>最新股價: " . htmlspecialchars($latest_price) . "</h3>";
-        
-        // 顯示所有價格，使用 / 分隔
-        echo "<h4>歷史股價:</h4>";
-        echo "<p>" . implode(' / ', array_map('htmlspecialchars', $data['price'])) . "</p>"; // 使用 / 分隔
-    } else {
-        echo "<h3>無法獲取股價資料</h3>";
-    }
-}
-?>
+            // 使用 AJAX 请求获取数据
+            $.ajax({
+                url: 'fetch_stock_twstock_py.html', // 调用 fetch_stock_twstock_py.html
+                type: 'GET',
+                data: { stockCode: stockCode },
+                dataType: 'json',
+                success: function(data) {
+                    // 处理返回的数据
+                    if (data.error) {
+                        $('#result').html(`<h3>錯誤: ${data.error}</h3>`);
+                    } else {
+                        $('#result').html(`<h2>股票代號: ${data.stock_code}</h2>`);
+                        const latestPrice = data.price[data.price.length - 1];
+                        $('#result').append(`<h3>最新股價: ${latestPrice}</h3>`);
+                        $('#result').append(`<h4>歷史股價:</h4><p>${data.price.join(' / ')}</p>`);
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<div>
-    <canvas id="priceChart" width="400" height="200"></canvas>
-</div>
-
-<script>
-    const ctx = document.getElementById('priceChart').getContext('2d');
-    const prices = <?php echo json_encode($data['price']); ?>; // 将价格数据传递给 JavaScript
-    const labels = prices.map((_, index) => index + 1); // 创建标签
-
-    const priceChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: '股價',
-                data: prices,
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 2,
-                fill: false
-            }]
-        },
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true
+                        // 绘制图表
+                        const ctx = document.getElementById('priceChart').getContext('2d');
+                        const labels = data.price.map((_, index) => index + 1);
+                        const priceChart = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: labels,
+                                datasets: [{
+                                    label: '股價',
+                                    data: data.price,
+                                    borderColor: 'rgba(75, 192, 192, 1)',
+                                    borderWidth: 2,
+                                    fill: false
+                                }]
+                            },
+                            options: {
+                                scales: {
+                                    y: {
+                                        beginAtZero: true
+                                    }
+                                }
+                            }
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $('#result').html(`<h3>無法獲取數據: ${error}</h3>`);
+                },
+                complete: function() {
+                    // 隐藏模态框
+                    $('#loadingModal').modal('hide');
                 }
-            }
-        }
-    });
-</script>
+            });
+        });
+    </script>
+</body>
+</html>
