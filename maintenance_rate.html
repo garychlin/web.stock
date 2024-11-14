@@ -113,6 +113,7 @@
 
         <p>總借款金額: 6,700,000 元</p>
         <button id="calculateButton" class="btn btn-primary">計算總維持率</button>
+        <button id="recalculateButton" class="btn btn-secondary">重新計算維持率</button>
 
         <!-- Modal -->
         <div class="modal fade" id="loadingModal" tabindex="-1" role="dialog" aria-labelledby="loadingModalLabel" aria-hidden="true">
@@ -134,53 +135,124 @@
     </div>
 
     <script>
-        document.getElementById('calculateButton').addEventListener('click', function() {
-            const loanAmount = 6700000; // 固定借款金額
-            const stockData = [
-                { code: '3661', shares: 2000 },
-                { code: '6531', shares: 4000 },
-                { code: '3548', shares: 4000 },
-                { code: '3406', shares: 2000 },
-                { code: '8996', shares: 2000 },
-                { code: '3443', shares: 1000 },
-                { code: '1503', shares: 3000 },
-                { code: '1513', shares: 6000 },
-                { code: '3324', shares: 2000 }, // 新增股票
-                { code: '3017', shares: 2000 }  // 新增股票
-            ];
+        let stockData; // 定义一个全局变量来存储股票数据
+        let apiData; // 定义一个全局变量来存储从 API 获取的数据
 
-            // 显示查询中模态框
-            $('#loadingModal').modal('show');
-            document.getElementById('result').innerHTML = ''; // 清空结果区域
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('calculateButton').addEventListener('click', function() {
+                const loanAmount = 6700000; // 固定借款金額
+                stockData = [ // 存储股票数据
+                    { code: '3661', shares: 2000 },
+                    { code: '6531', shares: 4000 },
+                    { code: '3548', shares: 4000 },
+                    { code: '3406', shares: 2000 },
+                    { code: '8996', shares: 2000 },
+                    { code: '3443', shares: 1000 },
+                    { code: '1503', shares: 3000 },
+                    { code: '1513', shares: 6000 },
+                    { code: '3324', shares: 2000 },
+                    { code: '3017', shares: 2000 }
+                ];
 
-            // 使用完整的 Python 路徑調用腳本
-            const command = `/usr/local/bin/python /Users/garylin/Projects-Cursor/stock/fetch_stock_twstock.py ${stockData.map(stock => stock.code).join(' ')}`;
-            fetch('maintenance_rate_exec.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ command: command, loanAmount: loanAmount })
-            })
-            .then(response => response.json())
-            .then(data => {
+                // 显示查询中模态框
+                $('#loadingModal').modal('show');
+                document.getElementById('result').innerHTML = ''; // 清空结果区域
+
+                // 使用完整的 Python 路径调用脚本
+                const command = `/usr/local/bin/python /Users/garylin/Projects-Cursor/stock/fetch_stock_twstock.py ${stockData.map(stock => stock.code).join(' ')}`;
+                fetch('maintenance_rate_exec.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ command: command, loanAmount: loanAmount })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    apiData = data; // 将从 API 获取的数据存储到全局变量中
+                    let totalMarketValue = 0; // 初始化总市值
+                    const today = new Date().toISOString().split('T')[0].replace(/-/g, '/'); // 获取今天的日期
+                    document.getElementById('priceHeader').textContent = `${today} 股價`; // 更新表头日期
+
+                    for (const stock of stockData) {
+                        const priceFromAPI = apiData.prices[stock.code]; // 从 API 获取的股价
+                        const priceCell = document.querySelector(`.price-cell[data-code="${stock.code}"]`);
+                        
+                        // 检查用户输入的股价
+                        const inputPrice = document.getElementById(`input-${stock.code}`);
+                        const userInputPrice = inputPrice && inputPrice.value ? parseFloat(inputPrice.value) : null; // 用户输入的股价
+
+                        // 使用用户输入的股价，如果没有输入则使用 API 获取的股价
+                        const price = userInputPrice !== null ? userInputPrice : priceFromAPI;
+
+                        if (priceCell) {
+                            if (priceFromAPI === null) {
+                                // 如果股价未获取，显示输入框
+                                priceCell.innerHTML = `<input type="number" id="input-${stock.code}" placeholder="輸入股價" />`;
+                            } else {
+                                // 否则显示获取到的股价
+                                priceCell.textContent = price; // 直接显示获取到的股价
+                            }
+                        }
+
+                        // 计算市值并填充
+                        const marketValueCell = document.querySelector(`.market-value[data-code="${stock.code}"]`);
+                        if (marketValueCell) {
+                            const marketValue = !isNaN(price) ? price * stock.shares : 0;
+                            marketValueCell.textContent = marketValue.toLocaleString(); // 填充市值
+                            totalMarketValue += marketValue; // 累加总市值
+                        }
+                    }
+
+                    // 计算总维持率
+                    if (loanAmount > 0) {
+                        const totalMaintenanceRate = (totalMarketValue / loanAmount) * 100;
+                        document.getElementById('result').innerHTML = `<h2>總維持率: ${totalMaintenanceRate.toFixed(2)}%</h2>`;
+                    } else {
+                        document.getElementById('result').innerHTML = "<h3>借款金額無效</h3>";
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('result').innerHTML = "<h3>無法獲取數據</h3>";
+                })
+                .finally(() => {
+                    // 隐藏查询模态框
+                    $('#loadingModal').modal('hide');
+                });
+            });
+
+            document.getElementById('recalculateButton').addEventListener('click', function() {
+                const loanAmount = 6700000; // 固定借款金額
                 let totalMarketValue = 0; // 初始化总市值
-                const today = new Date().toISOString().split('T')[0].replace(/-/g, '/'); // 获取今天的日期
-                document.getElementById('priceHeader').textContent = `${today} 股價`; // 更新表头日期
 
                 for (const stock of stockData) {
-                    const price = data.prices[stock.code];
-                    // 填充股价到表格
+                    const inputPrice = document.getElementById(`input-${stock.code}`);
+                    const userInputPrice = inputPrice && inputPrice.value ? parseFloat(inputPrice.value) : null; // 用户输入的股价
+
+                    // 使用用户输入的股价，如果没有输入则使用 API 获取的股价
+                    const price = userInputPrice !== null ? userInputPrice : (apiData && apiData.prices[stock.code]) || 0; // 从 apiData 获取股价，如果没有则为 0
+
+                    // 更新表格中的股价显示
                     const priceCell = document.querySelector(`.price-cell[data-code="${stock.code}"]`);
                     if (priceCell) {
-                        priceCell.textContent = isNaN(price) ? "無法獲取" : price; // 填充股价
+                        if (userInputPrice !== null) {
+                            // 如果有用户输入的股价，显示输入框
+                            priceCell.innerHTML = `<input type="number" id="input-${stock.code}" value="${userInputPrice}" placeholder="輸入股價" />`;
+                        } else {
+                            // 否则显示获取到的股价
+                            priceCell.textContent = price; // 直接显示获取到的股价
+                        }
                     }
-                    // 计算市值并填充
+
+                    // 计算市值并累加
+                    const marketValue = price * stock.shares;
+                    totalMarketValue += marketValue; // 累加总市值
+
+                    // 更新市值显示
                     const marketValueCell = document.querySelector(`.market-value[data-code="${stock.code}"]`);
                     if (marketValueCell) {
-                        const marketValue = !isNaN(price) ? price * stock.shares : 0;
                         marketValueCell.textContent = marketValue.toLocaleString(); // 填充市值
-                        totalMarketValue += marketValue; // 累加总市值
                     }
                 }
 
@@ -191,14 +263,6 @@
                 } else {
                     document.getElementById('result').innerHTML = "<h3>借款金額無效</h3>";
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('result').innerHTML = "<h3>無法獲取數據</h3>";
-            })
-            .finally(() => {
-                // 隐藏查询中模态框
-                $('#loadingModal').modal('hide');
             });
         });
     </script>
