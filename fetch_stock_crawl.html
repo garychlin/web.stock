@@ -16,7 +16,7 @@
 
         $stockCode = $_GET['stockCode'] ?? '2330'; // 預設為 2330
         $url = "https://finance.yahoo.com/quote/{$stockCode}.TW"; // 使用傳遞過來的股票代號
-echo $url."<br/>";
+        echo $url."<br/>";
         // 使用 cURL 抓取網頁
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -24,7 +24,7 @@ echo $url."<br/>";
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true); // 允許跟隨重定向
         curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
 
-        // 添加更多的 HTTP 头部
+        // 添加更多的 HTTP 標頭
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
             'Accept-Language: en-US,en;q=0.5',

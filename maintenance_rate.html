@@ -6,17 +6,17 @@
     <title>維持率計算</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
-        /* 自定义样式 */
+        /* 自定義樣式 */
         .modal-body {
             text-align: center;
         }
-        /* 设置链接颜色为黑色 */
+        /* 設置鏈接顏色為黑色 */
         a {
-            color: black; /* 设置链接颜色为黑色 */
-            text-decoration: none; /* 可选：去掉下划线 */
+            color: black; /* 設置鏈接顏色為黑色 */
+            text-decoration: none; /* 可選：去掉下划線 */
         }
         a:hover {
-            text-decoration: underline; /* 可选：鼠标悬停时显示下划线 */
+            text-decoration: underline; /* 可選：鼠標懸停時顯示下划線 */
         }
     </style>
 </head>
@@ -52,7 +52,7 @@
             </tbody>
         </table>
 
-        <p>總借款金額: 6,700,000 元</p>
+        <p>總借款金額: <span id="loanAmountDisplay"><?= $loanAmount ?></span> 元</p>
         <button id="calculateButton" class="btn btn-primary">計算總維持率</button>
         <button id="recalculateButton" class="btn btn-secondary">重新計算維持率</button>
 
@@ -76,17 +76,17 @@
     </div>
 
     <script>
-        let stockData = <?= json_encode(array_column($stocks, 'code')) ?>; // 将股票代号传递给 JavaScript
-        let apiData; // 定义一个全局变量来存储从 API 获取的数据
+        const loanAmount = <?= $loanAmount ?>; // 借款金額變數
+        let stockData = <?= json_encode(array_column($stocks, 'code')) ?>; // 將股票代號傳遞給 JavaScript
+        let apiData; // 定義一個全局變量來存儲從 API 獲取的數據
 
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('calculateButton').addEventListener('click', function() {
-                const loanAmount = 6700000; // 固定借款金額
-                // 显示查询中模态框
+                // 顯示查詢中模態框
                 $('#loadingModal').modal('show');
-                document.getElementById('result').innerHTML = ''; // 清空结果区域
+                document.getElementById('result').innerHTML = ''; // 清空結果區域
 
-                // 使用股票代号生成命令
+                // 使用股票代號生成命令
                 const command = `/usr/local/bin/python /Users/garylin/Projects-Cursor/stock/fetch_stock_twstock.py ${stockData.join(',')}`;
                 fetch('maintenance_rate_exec.php', {
                     method: 'POST',
@@ -97,35 +97,35 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    apiData = data; // 将从 API 获取的数据存储到全局变量中
-                    let totalMarketValue = 0; // 初始化总市值
-                    const today = new Date().toISOString().split('T')[0].replace(/-/g, '/'); // 获取今天的日期
-                    document.getElementById('priceHeader').textContent = `${today} 股價`; // 更新表头日期
+                    apiData = data; // 將從 API 獲取的數據存儲到全局變量中
+                    let totalMarketValue = 0; // 初始化總市值
+                    const today = new Date().toISOString().split('T')[0].replace(/-/g, '/'); // 獲取今天的日期
+                    document.getElementById('priceHeader').textContent = `${today} 股價`; // 更新表頭日期
 
                     for (const stock of stockData) {
-                        const priceFromAPI = apiData.prices[stock]; // 从 API 获取的股价
+                        const priceFromAPI = apiData.prices[stock]; // 從 API 獲取的股價
                         const priceCell = document.querySelector(`.price-cell[data-code="${stock}"]`);
 
                         if (priceCell) {
                             if (priceFromAPI === null || priceFromAPI.price === null) {
-                                // 如果股价未获取，显示输入框
+                                // 如果股價未獲取，顯示輸入框
                                 priceCell.innerHTML = `<input type="number" id="input-${stock}" placeholder="輸入股價" />`;
                             } else {
-                                // 否则显示获取到的股价
-                                priceCell.textContent = priceFromAPI.price; // 直接显示获取到的股价
+                                // 否則顯示獲取到的股價
+                                priceCell.textContent = priceFromAPI.price; // 直接顯示獲取到的股價
                             }
                         }
 
-                        // 计算市值并填充
+                        // 計算市值並填充
                         const marketValueCell = document.querySelector(`.market-value[data-code="${stock}"]`);
                         if (marketValueCell) {
                             const marketValue = priceFromAPI.price * <?= json_encode($stocks[array_search($stock, $stocks)]['shares']) ?>; // 使用 shares 字段
                             marketValueCell.textContent = marketValue.toLocaleString(); // 填充市值
-                            totalMarketValue += marketValue; // 累加总市值
+                            totalMarketValue += marketValue; // 累加總市值
                         }
                     }
 
-                    // 计算总维持率
+                    // 計算總維持率
                     if (loanAmount > 0) {
                         const totalMaintenanceRate = (totalMarketValue / loanAmount) * 100;
                         document.getElementById('result').innerHTML = `<h2>總維持率: ${totalMaintenanceRate.toFixed(2)}%</h2>`;
@@ -138,46 +138,46 @@
                     document.getElementById('result').innerHTML = "<h3>無法獲取數據</h3>";
                 })
                 .finally(() => {
-                    // 隐藏查询模态框
+                    // 隱藏查詢模態框
                     $('#loadingModal').modal('hide');
                 });
             });
 
             document.getElementById('recalculateButton').addEventListener('click', function() {
-                // 只更新市值和维持率
-                let totalMarketValue = 0; // 初始化总市值
-                const loanAmount = 6700000; // 固定借款金额
+                // 只更新市值和維持率
+                let totalMarketValue = 0; // 初始化總市值
+                const loanAmount = 6700000; // 固定借款金額
 
                 for (const stock of stockData) {
                     const priceCell = document.querySelector(`.price-cell[data-code="${stock}"] input`);
                     const marketValueCell = document.querySelector(`.market-value[data-code="${stock}"]`);
 
-                    // 获取用户输入的股价
-                    const userInputPrice = priceCell ? parseFloat(priceCell.value) : null; // 如果没有输入则为 null
-                    const shares = <?= json_encode(array_column($stocks, 'shares')) ?>[stockData.indexOf(stock)]; // 获取对应的股数
+                    // 獲取用戶輸入的股價
+                    const userInputPrice = priceCell ? parseFloat(priceCell.value) : null; // 如果沒有輸入則為 null
+                    const shares = <?= json_encode(array_column($stocks, 'shares')) ?>[stockData.indexOf(stock)]; // 獲取對應的股數
 
-                    // 直接使用用户输入的股价或从 API 获取的股价
+                    // 直接使用用戶輸入的股價或從 API 獲取的股價
                     const stockPrice = userInputPrice !== null 
                         ? userInputPrice 
                         : (marketValueCell 
                             ? parseFloat(marketValueCell.textContent.replace(/,/g, '').trim()) / shares 
-                            : 0); // 如果没有输入，使用之前的股价
+                            : 0); // 如果沒有輸入，使用之前的股價
                     
-                    // 确保股价有效
+                    // 確保股價有效
                     if (isNaN(stockPrice) || stockPrice <= 0) {
                         console.error(`Invalid stock price for ${stock}: ${stockPrice}`);
-                        continue; // 跳过此股票的计算
+                        continue; // 跳過此股票的計算
                     }
 
-                    const marketValue = stockPrice * shares; // 使用股数计算市值
+                    const marketValue = stockPrice * shares; // 使用股數計算市值
 
                     if (marketValueCell) {
                         marketValueCell.textContent = marketValue.toLocaleString(); // 填充市值
-                        totalMarketValue += marketValue; // 累加总市值
+                        totalMarketValue += marketValue; // 累加總市值
                     }
                 }
 
-                // 计算总维持率
+
                 if (loanAmount > 0) {
                     const totalMaintenanceRate = (totalMarketValue / loanAmount) * 100;
                     document.getElementById('result').innerHTML = `<h2>總維持率: ${totalMaintenanceRate.toFixed(2)}%</h2>`;
@@ -188,7 +188,7 @@
         });
     </script>
 
-    <!-- Bootstrap JS (需要在页面底部引入) -->
+    <!-- Bootstrap JS (需要在頁面底部引入) -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>

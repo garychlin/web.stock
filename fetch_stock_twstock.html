@@ -36,38 +36,38 @@
 
     <script>
         $(document).ready(function() {
-            // 显示模态框
+            // 顯示模態框
             $('#loadingModal').modal('show');
 
-            // 获取股票代号
+            // 獲取股票代號
             const stockCode = new URLSearchParams(window.location.search).get('stockCode') || '2330';
 
-            // 使用 AJAX 请求获取数据
+            // 使用 AJAX 請求獲取數據
             $.ajax({
-                url: 'fetch_stock_twstock_py.html', // 调用 fetch_stock_twstock_py.html
+                url: 'fetch_stock_twstock_py.html', // 調用 fetch_stock_twstock_py.html
                 type: 'GET',
                 data: { stockCode: stockCode },
                 dataType: 'json',
                 success: function(data) {
-                    // 调试输出，查看返回的数据
+                    // 調試輸出，查看返回的數據
                     console.log('Returned data:', data);
                     if (data.error) {
                         $('#result').html(`<h3>錯誤: ${data.error}</h3>`);
                     } else {
-                        // 假设 stockCode 是你要查询的股票代码
-                        const stockData = data[stockCode]; // 使用股票代码作为键获取数据
+                        // 假設 stockCode 是你要查詢的股票代碼
+                        const stockData = data[stockCode]; // 使用股票代碼作為鍵獲取數據
 
                         if (stockData) {
-                            $('#result').html(`<h2>股票代號: ${stockData.stock_code}</h2>`); // 访问 stock_code
-                            const latestPrice = stockData.price[stockData.price.length - 1]; // 获取最新价格
+                            $('#result').html(`<h2>股票代號: ${stockData.stock_code}</h2>`); // 訪問 stock_code
+                            const latestPrice = stockData.price[stockData.price.length - 1]; // 獲取最新價格
                             $('#result').append(`<h3>最新股價: ${latestPrice}</h3>`);
                             $('#result').append(`<h4>歷史股價:</h4><p>${stockData.price.join(' / ')}</p>`);
 
-                            // 生成日期数组
+                            // 生成日期數組
                             const prices = stockData.price;
                             const labels = generateDates(prices.length);
 
-                            // 绘制图表
+                            // 繪製圖表
                             const ctx = document.getElementById('priceChart').getContext('2d');
                             const priceChart = new Chart(ctx, {
                                 type: 'line',
@@ -98,33 +98,33 @@
                     $('#result').html(`<h3>無法獲取數據: ${error}</h3>`);
                 },
                 complete: function() {
-                    // 隐藏模态框
+                    // 隱藏模態框
                     $('#loadingModal').modal('hide');
                 }
             });
 
-            // 生成日期数组的函数
+            // 生成日期數組的函數
             function generateDates(numDays) {
                 const dates = [];
                 const today = new Date();
                 let count = 0;
 
-                // 从过去的日期开始生成
+                // 從過去的日期開始生成
                 while (dates.length < numDays) {
                     const currentDate = new Date(today);
                     currentDate.setDate(today.getDate() - count); // 向前推算日期
 
-                    // 检查是否是周末
+                    // 檢查是否是周末
                     const day = currentDate.getDay();
-                    if (day !== 0 && day !== 6) { // 0 = Sunday, 6 = Saturday
-                        // 格式化日期为 YYYY-MM-DD
+                    if (day !== 0 && day !== 6) { // 0 = 星期日, 6 = 星期六
+                        // 格式化日期為 YYYY-MM-DD
                         const formattedDate = currentDate.toISOString().split('T')[0];
-                        dates.push(formattedDate); // 将日期添加到数组的末尾
+                        dates.push(formattedDate); // 將日期添加到數組的末尾
                     }
                     count++;
                 }
 
-                return dates.reverse(); // 反转数组以从早到晚显示
+                return dates.reverse(); // 反轉數組以從早到晚顯示
             }
         });
     </script>

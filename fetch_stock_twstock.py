@@ -35,7 +35,7 @@ except Exception as e:
         'error': str(e)
     }
 
-# 确保只输出 JSON 数据，没有其他输出
+# 確保只輸出 JSON 數據，沒有其他輸出
 print(json.dumps(data))  # 輸出 JSON 數據
 
 
