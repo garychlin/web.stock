@@ -18,7 +18,7 @@
         $stockCode = $_GET['stockCode'] ?? '2330'; // 預設為 2330
         $apiKey = "bCRxXFdYneYWdyT7qGTQNsPY1oD32i"; // TEJ API 金鑰
         $apiUrl = "https://api.tej.com.tw/api/datatables/TWN/APRCD.json?coid={$stockCode}&api_key={$apiKey}";
-
+        // {"error":{"code":"PDB003","message":"您沒有存取資料表的權限。"}}
         // 顯示 API URL，並可點擊開啟新視窗
         echo "<div id='apiUrl'>API URL: <a href='{$apiUrl}' target='_blank'>{$apiUrl}</a></div>";
 

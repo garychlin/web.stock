@@ -20,6 +20,9 @@
         $endDate = $_GET['endDate'] ?? '2021-11-13'; // 預設結束日期
         $apiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRlIjoiMjAyNC0xMS0xMyAxNDowNzo1MCIsInVzZXJfaWQiOiJnYXJ5Y2hsaW4iLCJpcCI6IjEyMi4yNTQuMTMuMTcxIn0.rzOh4E0xJ_fA8k0iTTYbK4H5cdfYla8ZPdKGHzkrV4I"; // FinMind API 金鑰
         $apiUrl = "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id={$stockCode}&start_date={$startDate}&end_date={$endDate}&token={$apiKey}";
+        
+        // {"msg":"success","status":200,"data":[]}
+        // 沒回傳 data
 
         // 顯示 API URL，並可點擊開啟新視窗
         echo "<div id='apiUrl'>API URL: <a href='{$apiUrl}' target='_blank'>{$apiUrl}</a></div>";

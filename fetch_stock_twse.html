@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台灣證券交易所股票查詢</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        /* 表格行 hover 效果 */
+        .table-hover tbody tr:hover {
+            background-color: rgba(75, 192, 192, 0.2); /* 淺色背景 */
+        }
+        .text-red {
+            color: red; /* 漲的顏色 */
+        }
+        .text-green {
+            color: green; /* 跌的顏色 */
+        }
+    </style>
+</head>
+<body>
+    <?php include 'navigator.html'; ?>
+
+    <div class="container mt-5">
+        <h1>股票查詢</h1>
+        <div class="form-row mb-3">
+            <div class="col">
+                <label for="stockCodeInput">股票代號：</label>
+                <input type="text" id="stockCodeInput" class="form-control" placeholder="請輸入股票代號" value="2330">
+            </div>
+            <div class="col">
+                <label for="yearSelect">日期：</label>
+                <select id="yearSelect" class="form-control">
+                    <!-- 生成年份選項，從 2010 開始 -->
+                    <script>
+                        const currentYear = new Date().getFullYear();
+                        for (let year = 2010; year <= currentYear; year++) {
+                            document.write(`<option value="${year}" ${year === currentYear ? 'selected' : ''}>${year}</option>`);
+                        }
+                    </script>
+                </select>
+            </div>
+            <div class="col">
+                <label for="monthSelect">月份：</label>
+                <select id="monthSelect" class="form-control">
+                    <script>
+                        const currentMonth = new Date().getMonth() + 1; // 獲取當前月份
+                        for (let month = 1; month <= 12; month++) {
+                            document.write(`<option value="${month}" ${month === currentMonth ? 'selected' : ''}>${month}</option>`);
+                        }
+                    </script>
+                </select>
+            </div>
+            <div class="col">
+                <button id="searchButton" class="btn btn-primary">查詢</button>
+            </div>
+        </div>
+
+        <div id="result"></div>
+        <canvas id="priceChart" width="400" height="200"></canvas>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            let priceChart; // 定義圖表變數
+
+            // 檢查 URL 是否有 stockCode 參數
+            const urlParams = new URLSearchParams(window.location.search);
+            const stockCode = urlParams.get('stockCode') || '2330'; // 預設為 2330
+            $('#stockCodeInput').val(stockCode); // 如果有參數，填入輸入框
+
+            // 如果有 stockCode，則執行查詢
+            if (stockCode) {
+                const year = new Date().getFullYear(); // 預設年份為當前年份
+                const month = String(new Date().getMonth() + 1).padStart(2, '0'); // 當前月份
+                const apiUrl = `https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=${year}${month}01&stockNo=${stockCode}`;
+                fetchData(apiUrl);
+            }
+
+            // 查詢按鈕事件
+            $('#searchButton').click(function() {
+                const stockCode = $('#stockCodeInput').val();
+                const year = $('#yearSelect').val();
+                const month = String($('#monthSelect').val()).padStart(2, '0'); // 補零
+                const apiUrl = `https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=${year}${month}01&stockNo=${stockCode}`;
+                fetchData(apiUrl);
+            });
+
+            function fetchData(apiUrl) {
+                // 使用 AJAX 請求獲取數據
+                $.ajax({
+                    url: apiUrl,
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(data) {
+                        if (data.stat === "OK") {
+                            const titleParts = data.title.split('年'); // 分割 title
+                            const titleYear = parseInt(titleParts[0]) + 1911; // 將年轉換為西元年
+                            titleParts[0] = titleYear;
+                            const title = titleParts.join(' 年 ');
+                            displayData(data.data, title); // 傳遞 title
+                        } else {
+                            $('#result').html(`<h3>錯誤: ${data.stat}</h3>`);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        $('#result').html(`<h3>無法獲取數據: ${error}</h3>`);
+                    }
+                });
+            }
+
+            function displayData(stockData, title) {
+                $('#result').empty(); // 清空結果區域
+                const prices = [];
+                const labels = [];
+
+                // 顯示 API 回傳的 title
+                $('#result').append(`<h3>${title}</h3>`);
+
+                // 建立表格
+                let tableHtml = `
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>日期</th>
+                                <th>成交股數</th>
+                                <th>成交金額</th>
+                                <th>開盤價</th>
+                                <th>最高價</th>
+                                <th>最低價</th>
+                                <th>收盤價</th>
+                                <th>漲跌價差</th>
+                                <th>成交筆數</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                stockData.forEach(stock => {
+                    const dateParts = stock[0].split('/'); // 假設日期格式為 "民國年/月/日"
+                    const year = parseInt(dateParts[0]) + 1911; // 將民國年轉換為西元年
+                    const formattedDate = `${year}-${dateParts[1]}-${dateParts[2]}`; // 格式化為 YYYY-MM-DD
+                    const closingPrice = stock[6]; // 收盤價
+                    const priceDifference = stock[7]; // 漲跌價差
+
+                    // 根據漲跌價差設定顏色
+                    const closingPriceClass = priceDifference > 0 ? 'text-red' : (priceDifference < 0 ? 'text-green' : '');
+                    const priceDifferenceClass = priceDifference > 0 ? 'text-red' : (priceDifference < 0 ? 'text-green' : '');
+
+                    tableHtml += `
+                        <tr>
+                            <td>${formattedDate}</td>
+                            <td>${stock[1]}</td>
+                            <td>${stock[2]}</td>
+                            <td>${stock[3]}</td>
+                            <td>${stock[4]}</td>
+                            <td>${stock[5]}</td>
+                            <td class="${closingPriceClass}">${closingPrice}</td>
+                            <td class="${priceDifferenceClass}">${priceDifference}</td>
+                            <td>${stock[8]}</td>
+                        </tr>
+                    `;
+                    // 收集價格和日期
+                    prices.push(parseFloat(closingPrice.replace(/,/g, ''))); // 收盤價
+                    labels.push(formattedDate); // 日期
+                });
+
+                tableHtml += `
+                        </tbody>
+                    </table>
+                `;
+                $('#result').append(tableHtml); // 顯示表格
+
+                // 繪製圖表
+                const ctx = document.getElementById('priceChart').getContext('2d');
+                if (priceChart) {
+                    priceChart.destroy(); // 如果圖表已存在，先銷毀它
+                }
+                priceChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '收盤價',
+                            data: prices,
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 2,
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

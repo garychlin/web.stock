@@ -18,10 +18,17 @@
 </head>
 <body>
     <?php include 'navigator.html'; ?>
+    <?php 
+        $actionUrl = 'fetch_stock_twse.html'; 
+        //$actionUrl = 'fetch_stock_twstock.html';
+        //$actionUrl = 'fetch_stock_tej.html'; 
+        //$actionUrl = 'fetch_stock_finmind.html'; 
+        //$actionUrl = 'fetch_stock_crawl.html'; 
+    ?>
 
     <div class="container mt-5">
         <h1>查詢台股數據</h1>
-        <form action="fetch_stock_twstock.html" method="get">
+        <form action="<?php echo $actionUrl; ?>" method="get">
             <div class="input-group">
                 <input type="text" id="stockCode" name="stockCode" class="form-control" placeholder="請輸入股票代號" value="2330" required />
                 <div class="input-group-append">
