@@ -22,9 +22,11 @@
 </head>
 <body>
     <?php include 'navigator.html'; ?>
+    <?php include 'maintenance_stocks.php'; ?>
+    
     <div class="container mt-5">
         <h1>股票維持率計算</h1>
-        
+
         <table class="table table-striped table-sm">
             <thead>
                 <tr>
@@ -37,78 +39,16 @@
                 </tr>
             </thead>
             <tbody>
+                <?php foreach ($stocks as $stock): ?>
                 <tr>
-                    <td><a href="fetch_stock_twstock.html?stockCode=3661" target="_blank">世芯 KY</a></td>
-                    <td><a href="fetch_stock_twstock.html?stockCode=3661" target="_blank">3661</a></td>
-                    <td>0905 質借中</td>
-                    <td class="price-cell" data-code="3661"></td>
-                    <td>2000</td>
-                    <td class="market-value" data-code="3661"></td>
+                    <td><a href="fetch_stock_twstock.html?stockCode=<?= $stock['code'] ?>" target="_blank"><?= $stock['name'] ?></a></td>
+                    <td><a href="fetch_stock_twstock.html?stockCode=<?= $stock['code'] ?>" target="_blank"><?= $stock['code'] ?></a></td>
+                    <td><?= $stock['status'] ?></td>
+                    <td class="price-cell" data-code="<?= $stock['code'] ?>"></td>
+                    <td><?= $stock['shares'] ?></td>
+                    <td class="market-value" data-code="<?= $stock['code'] ?>"></td>
                 </tr>
-                <tr>
-                    <td><a href="fetch_stock_twstock.html?stockCode=6531" target="_blank">愛普</a></td>
-                    <td><a href="fetch_stock_twstock.html?stockCode=6531" target="_blank">6531</a></td>
-                    <td>0905 質借中</td>
-                    <td class="price-cell" data-code="6531"></td>
-                    <td>4000</td>
-                    <td class="market-value" data-code="6531"></td>
-                </tr>
-                <tr>
-                    <td><a href="fetch_stock_twstock.html?stockCode=3548" target="_blank">兆利</a></td>
-                    <td><a href="fetch_stock_twstock.html?stockCode=3548" target="_blank">3548</a></td>
-                    <td>0905 質借中</td>
-                    <td class="price-cell" data-code="3548"></td>
-                    <td>4000</td>
-                    <td class="market-value" data-code="3548"></td>
-                </tr>
-                <tr>
-                    <td><a href="fetch_stock_twstock.html?stockCode=3406" target="_blank">玉晶光</a></td>
-                    <td><a href="fetch_stock_twstock.html?stockCode=3406" target="_blank">3406</a></td>
-                    <td>0905 質借中</td>
-                    <td class="price-cell" data-code="3406"></td>
-                    <td>2000</td>
-                    <td class="market-value" data-code="3406"></td>
-                </tr>
-                <tr>
-                    <td><a href="fetch_stock_twstock.html?stockCode=8996" target="_blank">高力</a></td>
-                    <td><a href="fetch_stock_twstock.html?stockCode=8996" target="_blank">8996</a></td>
-                    <td>0905 質借中</td>
-                    <td class="price-cell" data-code="8996"></td>
-                    <td>2000</td>
-                    <td class="market-value" data-code="8996"></td>
-                </tr>
-                <tr>
-                    <td><a href="fetch_stock_twstock.html?stockCode=3443" target="_blank">創意</a></td>
-                    <td><a href="fetch_stock_twstock.html?stockCode=3443" target="_blank">3443</a></td>
-                    <td>1023 質借中</td>
-                    <td class="price-cell" data-code="3443"></td>
-                    <td>1000</td>
-                    <td class="market-value" data-code="3443"></td>
-                </tr>
-                <tr>
-                    <td><a href="fetch_stock_twstock.html?stockCode=1503" target="_blank">士電</a></td>
-                    <td><a href="fetch_stock_twstock.html?stockCode=1503" target="_blank">1503</a></td>
-                    <td>1023 質借中</td>
-                    <td class="price-cell" data-code="1503"></td>
-                    <td>3000</td>
-                    <td class="market-value" data-code="1503"></td>
-                </tr>
-                <tr>
-                    <td><a href="fetch_stock_twstock.html?stockCode=3324" target="_blank">中興電</a></td>
-                    <td><a href="fetch_stock_twstock.html?stockCode=3324" target="_blank">3324</a></td>
-                    <td>1023 質借中</td>
-                    <td class="price-cell" data-code="3324"></td>
-                    <td>2000</td>
-                    <td class="market-value" data-code="3324"></td>
-                </tr>
-                <tr>
-                    <td><a href="fetch_stock_twstock.html?stockCode=3017" target="_blank">奇鋐</a></td>
-                    <td><a href="fetch_stock_twstock.html?stockCode=3017" target="_blank">3017</a></td>
-                    <td>1023 質借中</td>
-                    <td class="price-cell" data-code="3017"></td>
-                    <td>2000</td>
-                    <td class="market-value" data-code="3017"></td>
-                </tr>
+                <?php endforeach; ?>
             </tbody>
         </table>
 
@@ -136,31 +76,18 @@
     </div>
 
     <script>
-        let stockData; // 定义一个全局变量来存储股票数据
+        let stockData = <?= json_encode(array_column($stocks, 'code')) ?>; // 将股票代号传递给 JavaScript
         let apiData; // 定义一个全局变量来存储从 API 获取的数据
 
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('calculateButton').addEventListener('click', function() {
                 const loanAmount = 6700000; // 固定借款金額
-                stockData = [ // 存储股票数据
-                    { code: '3661', shares: 2000 },
-                    { code: '6531', shares: 4000 },
-                    { code: '3548', shares: 4000 },
-                    { code: '3406', shares: 2000 },
-                    { code: '8996', shares: 2000 },
-                    { code: '3443', shares: 1000 },
-                    { code: '1503', shares: 3000 },
-                    { code: '1513', shares: 6000 },
-                    { code: '3324', shares: 2000 },
-                    { code: '3017', shares: 2000 }
-                ];
-
                 // 显示查询中模态框
                 $('#loadingModal').modal('show');
                 document.getElementById('result').innerHTML = ''; // 清空结果区域
 
-                // 使用完整的 Python 路径调用脚本
-                const command = `/usr/local/bin/python /Users/garylin/Projects-Cursor/stock/fetch_stock_twstock.py ${stockData.map(stock => stock.code).join(' ')}`;
+                // 使用股票代号生成命令
+                const command = `/usr/local/bin/python /Users/garylin/Projects-Cursor/stock/fetch_stock_twstock.py ${stockData.join(',')}`;
                 fetch('maintenance_rate_exec.php', {
                     method: 'POST',
                     headers: {
@@ -176,20 +103,13 @@
                     document.getElementById('priceHeader').textContent = `${today} 股價`; // 更新表头日期
 
                     for (const stock of stockData) {
-                        const priceFromAPI = apiData.prices[stock.code]; // 从 API 获取的股价
-                        const priceCell = document.querySelector(`.price-cell[data-code="${stock.code}"]`);
-                        
-                        // 检查用户输入的股价
-                        const inputPrice = document.getElementById(`input-${stock.code}`);
-                        const userInputPrice = inputPrice && inputPrice.value ? parseFloat(inputPrice.value) : null; // 用户输入的股价
-
-                        // 使用用户输入的股价，如果没有输入则使用 API 获取的股价
-                        const price = userInputPrice !== null ? userInputPrice : priceFromAPI.price;
+                        const priceFromAPI = apiData.prices[stock]; // 从 API 获取的股价
+                        const priceCell = document.querySelector(`.price-cell[data-code="${stock}"]`);
 
                         if (priceCell) {
                             if (priceFromAPI === null || priceFromAPI.price === null) {
                                 // 如果股价未获取，显示输入框
-                                priceCell.innerHTML = `<input type="number" id="input-${stock.code}" placeholder="輸入股價" />`;
+                                priceCell.innerHTML = `<input type="number" id="input-${stock}" placeholder="輸入股價" />`;
                             } else {
                                 // 否则显示获取到的股价
                                 priceCell.textContent = priceFromAPI.price; // 直接显示获取到的股价
@@ -197,9 +117,9 @@
                         }
 
                         // 计算市值并填充
-                        const marketValueCell = document.querySelector(`.market-value[data-code="${stock.code}"]`);
+                        const marketValueCell = document.querySelector(`.market-value[data-code="${stock}"]`);
                         if (marketValueCell) {
-                            const marketValue = !isNaN(price) ? price * stock.shares : 0;
+                            const marketValue = priceFromAPI.price * <?= json_encode($stocks[array_search($stock, $stocks)]['shares']) ?>; // 使用 shares 字段
                             marketValueCell.textContent = marketValue.toLocaleString(); // 填充市值
                             totalMarketValue += marketValue; // 累加总市值
                         }
@@ -224,50 +144,36 @@
             });
 
             document.getElementById('recalculateButton').addEventListener('click', function() {
-                const loanAmount = 6700000; // 固定借款金額
+                // 只更新市值和维持率
                 let totalMarketValue = 0; // 初始化总市值
+                const loanAmount = 6700000; // 固定借款金额
 
                 for (const stock of stockData) {
-                    const inputPrice = document.getElementById(`input-${stock.code}`);
-                    const userInputPrice = inputPrice && inputPrice.value ? parseFloat(inputPrice.value) : null; // 用户输入的股价
+                    const priceCell = document.querySelector(`.price-cell[data-code="${stock}"] input`);
+                    const marketValueCell = document.querySelector(`.market-value[data-code="${stock}"]`);
 
-                    // 使用用户输入的股价，如果没有输入则使用 API 获取的股价
-                    const price = userInputPrice !== null ? userInputPrice : (apiData && apiData.prices[stock.code]) || 0; // 从 apiData 获取股价，如果没有则为 0
+                    // 获取用户输入的股价
+                    const userInputPrice = priceCell ? parseFloat(priceCell.value) : null; // 如果没有输入则为 null
+                    const shares = <?= json_encode(array_column($stocks, 'shares')) ?>[stockData.indexOf(stock)]; // 获取对应的股数
 
-                    // 更新表格中的股价显示
-                    const priceCell = document.querySelector(`.price-cell[data-code="${stock.code}"]`);
-                    if (priceCell) {
-                        if (userInputPrice !== null) {
-                            // 如果有用户输入的股价，显示输入框
-                            priceCell.innerHTML = `<input type="number" id="input-${stock.code}" value="${userInputPrice}" placeholder="輸入股價" />`;
-                        } else {
-                            // 否则显示获取到的股价
-                            priceCell.textContent = price.price; // 直接显示获取到的股价
-                        }
+                    // 直接使用用户输入的股价或从 API 获取的股价
+                    const stockPrice = userInputPrice !== null 
+                        ? userInputPrice 
+                        : (marketValueCell 
+                            ? parseFloat(marketValueCell.textContent.replace(/,/g, '').trim()) / shares 
+                            : 0); // 如果没有输入，使用之前的股价
+                    
+                    // 确保股价有效
+                    if (isNaN(stockPrice) || stockPrice <= 0) {
+                        console.error(`Invalid stock price for ${stock}: ${stockPrice}`);
+                        continue; // 跳过此股票的计算
                     }
 
-                    // 计算市值并累加
-                    let marketValue;
+                    const marketValue = stockPrice * shares; // 使用股数计算市值
 
-                    // 检查 price 的类型
-                    if (typeof price === 'object' && price !== null && 'price' in price) {
-                        // 如果 price 是对象且包含 price 属性，则使用该属性的值
-                        marketValue = price.price * stock.shares;
-                    } else if (typeof price === 'number') {
-                        // 如果 price 是数值，则直接使用
-                        marketValue = price * stock.shares;
-                    } else {
-                        // 如果 price 既不是对象也不是数值，则设置为 0
-                        marketValue = 0;
-                    }
-
-                    // 累加总市值
-                    totalMarketValue += marketValue; // 累加总市值
-
-                    // 更新市值显示
-                    const marketValueCell = document.querySelector(`.market-value[data-code="${stock.code}"]`);
                     if (marketValueCell) {
                         marketValueCell.textContent = marketValue.toLocaleString(); // 填充市值
+                        totalMarketValue += marketValue; // 累加总市值
                     }
                 }
 
