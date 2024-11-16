@@ -30,6 +30,11 @@
         .down {
             fill: red;
         }
+        .line {
+            fill: none;
+            stroke: blue; /* 曲線顏色 */
+            stroke-width: 2;
+        }
     </style>
 </head>
 <body>
@@ -250,10 +255,10 @@
                 });
 
                 // D3.js K 線圖
-                drawD3Candlestick(candlestickData);
+                drawD3Candlestick(candlestickData, prices);
             }
 
-            function drawD3Candlestick(data) {
+            function drawD3Candlestick(data, prices) {
                 const svg = d3.select("#d3CandlestickChart");
                 svg.selectAll("*").remove(); // 清空 SVG
 
@@ -287,9 +292,9 @@
                 g.selectAll(".candle")
                     .data(data)
                     .enter().append("rect")
-                    .attr("class", d => d.c > d.o ? "candle down" : "candle up")
+                    .attr("class", d => d.c > d.o ? "candle down" : "candle up") // 互換顏色
                     .attr("x", d => x(new Date(d.x)))
-                    .attr("y", d => d.c > d.o ? y(d.o) : y(d.c))
+                    .attr("y", d => d.c > d.o ? y(d.o) : y(d.c)) // 互換開盤和收盤的 y 值
                     .attr("height", d => Math.abs(y(d.c) - y(d.o)))
                     .attr("width", x.bandwidth());
 
@@ -302,7 +307,17 @@
                     .attr("x2", d => x(new Date(d.x)) + x.bandwidth() / 2)
                     .attr("y1", d => y(d.h))
                     .attr("y2", d => y(d.l))
-                    .attr("stroke", d => d.c > d.o ? "red" : "green");
+                    .attr("stroke", d => d.c > d.o ? "red" : "green"); // 互換顏色
+
+                // 繪製每日股價曲線
+                const line = d3.line()
+                    .x((d, i) => x(new Date(data[i].x)) + x.bandwidth() / 2) // 曲線的 x 值
+                    .y(d => y(d)); // 曲線的 y 值
+
+                g.append("path")
+                    .datum(prices) // 使用收盤價數據
+                    .attr("class", "line")
+                    .attr("d", line); // 繪製曲線
             }
         });
     </script>
