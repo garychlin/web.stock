@@ -165,7 +165,7 @@
                             <td>${highestPrice}</td> <!-- 最高價 -->
                             <td>${lowestPrice}</td> <!-- 最低價 -->
                             <td class="${priceDifference > 0 ? 'text-red' : (priceDifference < 0 ? 'text-green' : '')}">${priceDifference}</td> <!-- 漲跌價差 -->
-                            <td class="${closingPrice > openingPrice ? 'text-red' : 'text-green'} price-cell">${closingPrice}</td> <!-- 收盤價 -->
+                            <td class="${priceDifference > 0 ? 'text-red' : (priceDifference < 0 ? 'text-green' : '')} price-cell">${closingPrice}</td> <!-- 收盤價 -->
                         </tr>
                     `;
 
@@ -203,44 +203,14 @@
                                 const value = context.dataset.data[context.dataIndex];
                                 return value.c > value.o ? 'rgba(75, 192, 192, 1)' : 'rgba(255, 99, 132, 1)';
                             }
-                        }]
-                    },
-                    options: {
-                        scales: {
-                            x: {
-                                type: 'time',
-                                time: {
-                                    unit: 'day'
-                                },
-                                title: {
-                                    display: true,
-                                    text: '日期'
-                                }
-                            },
-                            y: {
-                                title: {
-                                    display: true,
-                                    text: '價格'
-                                }
-                            }
-                        }
-                    }
-                });
-
-                const ctxPrice = document.getElementById('priceChart').getContext('2d');
-                if (priceChart) {
-                    priceChart.destroy();
-                }
-                priceChart = new Chart(ctxPrice, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
+                        },
+                        {
                             label: '收盤價',
-                            data: prices,
-                            borderColor: 'rgba(75, 192, 192, 1)',
+                            data: prices.map((price, index) => ({ x: candlestickData[index].x, y: price })), // 將收盤價轉換為 {x, y} 格式
+                            borderColor: 'rgba(255, 206, 86, 1)', // 收盤價曲線顏色
                             borderWidth: 2,
-                            fill: false
+                            fill: false,
+                            type: 'line' // 設定為線型圖
                         }]
                     },
                     options: {
