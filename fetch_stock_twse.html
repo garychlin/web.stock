@@ -11,11 +11,11 @@
             background-color: rgba(75, 192, 192, 0.2); /* 淺色背景 */
         }
         .text-red {
-            color: red; /* 漲的顏色 */
+  //          color: red; /* 漲的顏色 */
             font-weight: bold; /* 粗體 */
         }
         .text-green {
-            color: green; /* 跌的顏色 */
+  //          color: green; /* 跌的顏色 */
             font-weight: bold; /* 粗體 */
         }
         .price-cell {
@@ -25,14 +25,18 @@
             stroke-width: 1;
         }
         .up {
-            fill: green;
+  //          fill: red; /* 收盤價高於開盤價的顏色 */
         }
         .down {
-            fill: red;
+  //          fill: green; /* 收盤價低於開盤價的顏色 */
         }
         .line {
             fill: none;
-            stroke: blue; /* 曲線顏色 */
+            stroke-width: 2;
+        }
+        .avg-line {
+            fill: none;
+            stroke: orange; /* 5 日平均線顏色 */
             stroke-width: 2;
         }
     </style>
@@ -157,9 +161,10 @@
 
                 const candlestickData = [];
                 const prices = [];
-                const labels = [];
+                const movingAverage = []; // 用於存儲 5 日平均線數據
+                const labels = []; // 初始化 labels 陣列
 
-                stockData.forEach(stock => {
+                stockData.forEach((stock, index) => {
                     const dateParts = stock[0].split('/');
                     const year = parseInt(dateParts[0]) + 1911;
                     const formattedDate = new Date(`${year}-${dateParts[1]}-${dateParts[2]}`).getTime();
@@ -193,6 +198,14 @@
 
                     prices.push(closingPrice);
                     labels.push(`${year}-${dateParts[1]}-${dateParts[2]}`);
+
+                    // 計算 5 日移動平均
+                    if (index >= 4) { // 確保有足夠的數據來計算 5 日平均
+                        const avg = d3.mean(prices.slice(index - 4, index + 1)); // 計算最近 5 天的平均
+                        movingAverage.push({ x: formattedDate, y: avg });
+                    } else {
+                        movingAverage.push({ x: formattedDate, y: null }); // 不足 5 天時設為 null
+                    }
                 });
 
                 tableHtml += `
@@ -255,10 +268,21 @@
                 });
 
                 // D3.js K 線圖
-                drawD3Candlestick(candlestickData, prices);
+                drawD3Candlestick(candlestickData, prices, movingAverage);
             }
 
-            function drawD3Candlestick(data, prices) {
+            function calculateMovingAverage(data, period) {
+                const movingAverage = [];
+                for (let i = 0; i < data.length; i++) {
+                    const start = Math.max(0, i - period + 1); // 確保不超出範圍
+                    const subset = data.slice(start, i + 1); // 獲取最近的收盤價
+                    const avg = subset.reduce((sum, d) => sum + parseFloat(d[6]), 0) / subset.length; // 計算平均，d[6] 是收盤價
+                    movingAverage.push({ x: data[i][0], y: avg }); // 存儲日期和平均值
+                }
+                return movingAverage;
+            }
+
+            function drawD3Candlestick(data, prices, movingAverage) {
                 const svg = d3.select("#d3CandlestickChart");
                 svg.selectAll("*").remove(); // 清空 SVG
 
@@ -279,6 +303,29 @@
                 const g = svg.append("g")
                     .attr("transform", `translate(${margin.left},${margin.top})`);
 
+                // 繪製格線
+                g.selectAll(".grid")
+                    .data(y.ticks(10)) // 設置格線的數量
+                    .enter().append("line")
+                    .attr("class", "grid")
+                    .attr("x1", 0)
+                    .attr("x2", width)
+                    .attr("y1", d => y(d))
+                    .attr("y2", d => y(d))
+                    .attr("stroke", "#E5E5E5") // 格線顏色
+                    .attr("stroke-width", 1); // 格線寬度
+
+                g.selectAll(".grid")
+                    .data(x.domain())
+                    .enter().append("line")
+                    .attr("class", "grid")
+                    .attr("x1", d => x(new Date(d)) + x.bandwidth() / 2)
+                    .attr("x2", d => x(new Date(d)) + x.bandwidth() / 2)
+                    .attr("y1", 0)
+                    .attr("y2", height)
+                    .attr("stroke", "#E5E5E5") // 格線顏色
+                    .attr("stroke-width", 1); // 格線寬度
+
                 g.append("g")
                     .attr("class", "axis axis--x")
                     .attr("transform", `translate(0,${height})`)
@@ -292,32 +339,64 @@
                 g.selectAll(".candle")
                     .data(data)
                     .enter().append("rect")
-                    .attr("class", d => d.c > d.o ? "candle down" : "candle up") // 互換顏色
+                    .attr("class", d => d.c < d.o ? "candle up" : "candle down") // 互換顏色
                     .attr("x", d => x(new Date(d.x)))
-                    .attr("y", d => d.c > d.o ? y(d.o) : y(d.c)) // 互換開盤和收盤的 y 值
-                    .attr("height", d => Math.abs(y(d.c) - y(d.o)))
-                    .attr("width", x.bandwidth());
+                    .attr("y", d => d.c > d.o ? y(d.c) : y(d.o)) // 根據收盤價和開盤價決定 y 值
+                    .attr("height", d => Math.abs(y(d.c) - y(d.o))) // 實體棒的度
+                    .attr("width", x.bandwidth())
+                    .attr("fill", d => d.c < d.o ? "#ABDFE0" : "#FFB3C2") // 實心顏色
+                    .attr("stroke", d => d.c < d.o ? "#4CC0C0" : "#FE6484") // 外框顏色
+                    .attr("stroke-width", 1); // 外框寬度
 
                 // 繪製高低線
-                g.selectAll(".line")
+                g.selectAll(".line.upper")
                     .data(data)
                     .enter().append("line")
-                    .attr("class", "line")
-                    .attr("x1", d => x(new Date(d.x)) + x.bandwidth() / 2)
-                    .attr("x2", d => x(new Date(d.x)) + x.bandwidth() / 2)
-                    .attr("y1", d => y(d.h))
-                    .attr("y2", d => y(d.l))
-                    .attr("stroke", d => d.c > d.o ? "red" : "green"); // 互換顏色
+                    .attr("class", "line upper") // 添加類別以便於識別
+                    .attr("x1", d => x(new Date(d.x)) + x.bandwidth() / 2) // 中心位置
+                    .attr("x2", d => x(new Date(d.x)) + x.bandwidth() / 2) // 中心位置
+                    .attr("y1", d => y(d.h)) // 最高價
+                    .attr("y2", d => d.c > d.o ? y(d.c) : y(d.o)) // 上引線的底部
+                    .attr("stroke", d => d.c < d.o ? "#4CC0C0" : "#FE6484") // 上引線顏色
+                    .attr("stroke-width", 1); // 上引線寬度
 
-                // 繪製每日股價曲線
+                // 繪製下引線
+                g.selectAll(".line.lower")
+                    .data(data)
+                    .enter().append("line")
+                    .attr("class", "line lower") // 添加類別以便於識別
+                    .attr("x1", d => x(new Date(d.x)) + x.bandwidth() / 2) // 中心位置
+                    .attr("x2", d => x(new Date(d.x)) + x.bandwidth() / 2) // 中心位置
+                    .attr("y1", d => d.c < d.o ? y(d.c) : y(d.o)) // 下引線的頂部
+                    .attr("y2", d => y(d.l)) // 最低價
+                    .attr("stroke", d => d.c > d.o ? "#FE6484" : "#4CC0C0") // 下引線顏色
+                    .attr("stroke-width", 1); // 下引線寬度
+
+                // 繪製股價曲線
                 const line = d3.line()
                     .x((d, i) => x(new Date(data[i].x)) + x.bandwidth() / 2) // 曲線的 x 值
-                    .y(d => y(d)); // 曲線的 y 值
+                    .y(d => y(d.c)); // 曲線的 y 值
 
                 g.append("path")
-                    .datum(prices) // 使用收盤價數據
+                    .datum(data) // 使用原始數據
                     .attr("class", "line")
-                    .attr("d", line); // 繪製曲線
+                    .attr("d", line) // 繪製曲線
+                    .attr("stroke", "#FFCE56") // 股價曲線顏色
+                    .attr("fill", "none") // 不填充
+                    .attr("stroke-width", 2); // 曲線寬度
+
+                // 繪製 5 日平均線
+                const avgLine = d3.line()
+                    .x((d, i) => x(new Date(d.x)) + x.bandwidth() / 2) // 曲線的 x 值
+                    .y(d => y(d.y)); // 曲線的 y 值
+
+                g.append("path")
+                    .datum(movingAverage.filter(d => d.y !== null)) // 過濾掉 null 值
+                    .attr("class", "avg-line")
+                    .attr("d", avgLine) // 繪製 5 日平均線
+                    .attr("stroke", "green") // 5 日平均線顏色設置為綠色
+                    .attr("fill", "none") // 不填充
+                    .attr("stroke-width", 2); // 5 日平均線寬度
             }
         });
     </script>
