@@ -97,6 +97,7 @@
     <script>
         $(document).ready(function() {
             let candlestickChart;
+            const useStaticData = true; // 設置為 true 使用靜態數據，false 使用 API
 
             const urlParams = new URLSearchParams(window.location.search);
             const stockCode = urlParams.get('stockCode') || '2330';
@@ -107,7 +108,23 @@
                 const year = $('#yearSelect').val();
                 const month = String($('#monthSelect').val()).padStart(2, '0');
                 const apiUrl = `https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=${year}${month}01&stockNo=${stockCode}`;
-                fetchData(apiUrl, year, month, stockCode); // 傳遞 year 和 month
+
+                if (useStaticData) {
+                    // 讀取靜態數據
+                    $.getJSON('stock_2330.json', function(data) {
+                        if (data.stat === "OK") {
+                            displayData(data.data, data.title, year, month, stockCode);
+                        } else {
+                            $('#result').html(`<h3>錯誤: ${data.stat}</h3>`);
+                        }
+                    }).fail(function() {
+                        console.error('無法加載靜態數據');
+                        $('#result').html(`<h3>無法獲取靜態數據</h3>`);
+                    });
+                } else {
+                    // 讀取 API 數據
+                    fetchData(apiUrl, year, month, stockCode);
+                }
             });
 
             function fetchData(apiUrl, year, month, stockCode) {
@@ -118,13 +135,13 @@
                     success: function(data) {
                         console.log(data); // 調試信息，查看獲取的數據
                         if (data.stat === "OK") {
-                            displayData(data.data, data.title, year, month, stockCode); // 傳遞 data.title
+                            displayData(data.data, data.title, year, month, stockCode);
                         } else {
                             $('#result').html(`<h3>錯誤: ${data.stat}</h3>`);
                         }
                     },
                     error: function(xhr, status, error) {
-                        console.error('AJAX Error:', error); // 調試信息，查看錯誤
+                        console.error('AJAX Error:', error);
                         $('#result').html(`<h3>無法獲取數據: ${error}</h3>`);
                     }
                 });
