@@ -83,7 +83,7 @@
         <div id="result"></div> <!-- 價格表格在這裡 -->
 
         <canvas id="candlestickChart" width="400" height="200"></canvas> <!-- Chart.js K 線圖 -->
-        <svg id="d3CandlestickChart" width="800" height="400"></svg> <!-- D3.js K 線圖 -->
+        <svg id="d3CandlestickChart" width="100%" height="400"></svg> <!-- D3.js K 線圖 -->
     </div>
 
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
@@ -304,8 +304,12 @@
                 svg.selectAll("*").remove(); // 清空 SVG
 
                 const margin = { top: 20, right: 30, bottom: 30, left: 40 };
-                const width = +svg.attr("width") - margin.left - margin.right;
-                const height = +svg.attr("height") - margin.top - margin.bottom;
+                const containerWidth = parseInt(d3.select('.container').style('width')); // 獲取容器的寬度
+                const width = containerWidth - margin.left - margin.right; // 計算 SVG 寬度
+                const height = +svg.attr("height") - margin.top - margin.bottom; // 計算 SVG 高度
+
+                // 設置 SVG 的寬度
+                svg.attr("width", containerWidth);
 
                 const x = d3.scaleBand()
                     .domain(data.map(d => new Date(d.x)))
@@ -415,6 +419,11 @@
                     .attr("fill", "none") // 不填充
                     .attr("stroke-width", 2); // 5 日平均線寬度
             }
+
+            // 監聽窗口大小改變事件
+            window.addEventListener('resize', () => {
+                drawD3Candlestick(candlestickData, prices, movingAverage); // 重新繪製圖表
+            });
         });
     </script>
 </body>
