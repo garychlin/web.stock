@@ -105,7 +105,8 @@
     <script>
         $(document).ready(function() {
             let candlestickChart;
-            const useStaticData = true; // 設置為 true 使用靜態數據，false 使用 API
+            const useStaticData = false; // 設置為 true 使用靜態數據，false 使用 API
+            const showChartJS = false; // 新增：控制 Chart.js K線圖顯示的變數
 
             const urlParams = new URLSearchParams(window.location.search);
             const stockCode = urlParams.get('stockCode') || '2330';
@@ -257,8 +258,14 @@
                 `;
                 $('#result').append(tableHtml);
 
-                // 繪製 K 線圖
-                createChart(candlestickData, prices);
+                // 根據 showChartJS 變數決定是否顯示 Chart.js K線圖
+                if (showChartJS) {
+                    $('#candlestickChart').show();
+                    createChart(candlestickData, prices);
+                } else {
+                    $('#candlestickChart').hide();
+                }
+
                 drawD3Candlestick(candlestickData, hoverData, movingAverage);
             }
 
@@ -336,13 +343,13 @@
 
             // 定義全局變量
             let candlestickData = []; // 初始化為空數組
-            let prices = []; // 初始化為空數組
+            let prices = []; // ���化為空數組
             let movingAverage = []; // 初始化為空數組
 
             // 初始設置 SVG 寬度
             function setSvgWidth() {
                 const containerWidth = parseInt(d3.select('.container').style('width')); // 獲取容器的寬度
-                svg.attr("width", containerWidth); // ���置 SVG 的寬��為容器的寬度
+                svg.attr("width", containerWidth); // 置 SVG 的寬為容器的寬度
                 return containerWidth; // 返回容器寬度
             }
 
@@ -350,9 +357,9 @@
             function drawD3Candlestick(candlestickData, hoverData, movingAverage) {
                 const svg = d3.select("#d3CandlestickChart");
                 const containerWidth = parseInt(d3.select('.container').style('width'));
-                const height = 400; // K線圖高度
-                const volumeHeight = 200; // 成交量圖高度
-                const margin = { top: 20, right: 30, bottom: 30, left: 40 };
+                const margin = { top: 20, right: 30, bottom: 70, left: 40 }; // 增加底部邊距
+                const height = 400; // K 線圖的高度
+                const volumeHeight = 200; // 成交量圖的高度
                 const width = containerWidth - margin.left - margin.right;
 
                 // 設置 SVG 的總高度為 K線圖高度 + 成交量圖高度 + 邊距
@@ -496,11 +503,11 @@
 
                 // 在繪製完 K線圖之後，添加成交量圖
                 const volumeG = svg.append("g")
-                    .attr("transform", `translate(${margin.left},${margin.top + height})`);
+                    .attr("transform", `translate(${margin.left},${margin.top + height + 100})`); // 增加 100 像素的距離
 
                 // 設置成交量的 Y 軸比例尺
                 const volumeY = d3.scaleLinear()
-                    .domain([0, d3.max(hoverData, d => d.volume)]) // 使用成交量的最大值
+                    .domain([0, d3.max(hoverData, d => d.volume)]) // 使用��交量的最大值
                     .range([volumeHeight, 0])
                     .nice();
 
@@ -545,7 +552,7 @@
                     .attr("d", volumeAvgLine)
                     .attr("fill", "none")
                     .attr("stroke", "green")
-                    .attr("stroke-width", 2);
+                    .attr("stroke-width", 1);
             }
 
             function formatDate(dateString) {
