@@ -105,7 +105,7 @@
     <script>
         $(document).ready(function() {
             let candlestickChart;
-            const useStaticData = false; // 設置為 true 使用靜態數據，false 使用 API
+            const useStaticData = true; // 設置為 true 使用靜態數據，false 使用 API
 
             const urlParams = new URLSearchParams(window.location.search);
             const stockCode = urlParams.get('stockCode') || '2330';
@@ -118,7 +118,7 @@
                 const apiUrl = `https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=${year}${month}01&stockNo=${stockCode}`;
 
                 if (useStaticData) {
-                    // 讀取靜態數據
+                    // 讀靜態數據
                     $.getJSON('stock_2330.json', function(data) {
                         if (data.stat === "OK") {
                             displayData(data.data, data.title, year, month, stockCode);
@@ -217,7 +217,8 @@
                         h: highestPrice,
                         l: lowestPrice,
                         c: closingPrice,
-                        change: priceDifference // 漲跌價差
+                        change: priceDifference, // 漲跌價差
+                        volume: parseInt(stock[1].replace(/,/g, '')) // 添加成交量數據
                     });
 
                     // 設置顏色和字體樣式
@@ -256,11 +257,9 @@
                 `;
                 $('#result').append(tableHtml);
 
-                // Chart.js K 線圖
+                // 繪製 K 線圖
                 createChart(candlestickData, prices);
-
-                // D3.js K 線圖
-                drawD3Candlestick(candlestickData, prices, movingAverage); // 使用 hoverData
+                drawD3Candlestick(candlestickData, hoverData, movingAverage);
             }
 
             function createChart(candlestickData, prices) {
@@ -348,12 +347,19 @@
             }
 
             // 繪製圖表的函數
-            function drawD3Candlestick(candlestickData, prices, movingAverage) {
-                const containerWidth = parseInt(d3.select('.container').style('width')); // 在這裡獲取容器寬度
-
+            function drawD3Candlestick(candlestickData, hoverData, movingAverage) {
+                const svg = d3.select("#d3CandlestickChart");
+                const containerWidth = parseInt(d3.select('.container').style('width'));
+                const height = 400; // K線圖高度
+                const volumeHeight = 200; // 成交量圖高度
                 const margin = { top: 20, right: 30, bottom: 30, left: 40 };
-                const width = containerWidth - margin.left - margin.right; // 計算 SVG 寬度
-                const height = +svg.attr("height") - margin.top - margin.bottom; // 計算 SVG 高度
+                const width = containerWidth - margin.left - margin.right;
+
+                // 設置 SVG 的總高度為 K線圖高度 + 成交量圖高度 + 邊距
+                svg.attr("height", height + volumeHeight + margin.top + margin.bottom);
+                
+                // 清空之前的圖表
+                svg.selectAll("*").remove();
 
                 const x = d3.scaleBand()
                     .domain(candlestickData.map(d => new Date(d.x)))
@@ -394,7 +400,12 @@
                 g.append("g")
                     .attr("class", "axis axis--x")
                     .attr("transform", `translate(0,${height})`)
-                    .call(d3.axisBottom(x).tickFormat(d3.timeFormat("%Y-%m-%d")));
+                    .call(d3.axisBottom(x)
+                        .ticks(10)  // 控制顯示的刻度數量
+                        .tickFormat(d3.timeFormat("%Y-%m-%d")))
+                    .selectAll("text")  // 選擇所有文字
+                    .style("text-anchor", "end")  // 文字對齊方式
+                    .attr("transform", "rotate(-45)"); // 旋轉 45 度
 
                 g.append("g")
                     .attr("class", "axis axis--y")
@@ -482,12 +493,40 @@
                     //.attr("stroke", "green") // 5 日平均線顏色設置為綠色
                     //.attr("fill", "green") // 不填充
                     .attr("stroke-width", 2); // 5 日平均線寬度
+
+                // 在繪製完 K線圖之後，添加成交量圖
+                const volumeG = svg.append("g")
+                    .attr("transform", `translate(${margin.left},${margin.top + height})`);
+
+                // 設置成交量的 Y 軸比例尺
+                const volumeY = d3.scaleLinear()
+                    .domain([0, d3.max(hoverData, d => d.volume)]) // 使用成交量的最大值
+                    .range([volumeHeight, 0])
+                    .nice();
+
+                // 繪製成交量柱狀圖
+                volumeG.selectAll(".volume-bar")
+                    .data(hoverData)
+                    .enter().append("rect")
+                    .attr("class", "volume-bar")
+                    .attr("x", d => x(new Date(d.x)))
+                    .attr("y", d => volumeY(d.volume))
+                    .attr("height", d => volumeHeight - volumeY(d.volume))
+                    .attr("width", x.bandwidth())
+                    .attr("fill", d => d.c >= d.o ? "#FFB3C2" : "#ABDFE0"); // 使用與 K線圖相同的顏色邏輯
+
+                // 添加成交量的 Y 軸
+                volumeG.append("g")
+                    .attr("class", "axis axis--volume")
+                    .call(d3.axisLeft(volumeY)
+                        .ticks(5)
+                        .tickFormat(d => d3.format(".2s")(d))); // 使用縮寫格式，如 1M, 2M 等
             }
 
             function formatDate(dateString) {
                 const date = new Date(dateString);
                 const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, '0'); // 月份從 0 開始
+                const month = String(date.getMonth() + 1).padStart(2, '0'); // 月份從 0 始
                 const day = String(date.getDate()).padStart(2, '0');
                 return `${year}/${month}/${day}`;
             }
