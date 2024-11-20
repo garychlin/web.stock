@@ -260,7 +260,7 @@
                 createChart(candlestickData, prices);
 
                 // D3.js K 線圖
-                drawD3Candlestick(hoverData, prices, movingAverage); // 使用 hoverData
+                drawD3Candlestick(candlestickData, prices, movingAverage); // 使用 hoverData
             }
 
             function createChart(candlestickData, prices) {
@@ -291,7 +291,7 @@
                             borderColor: 'rgba(255, 206, 86, 1)', // 收盤價曲線顏色
                             borderWidth: 2,
                             fill: false,
-                            type: 'line' // 設定為線型圖
+                            type: 'line' // 設定為線圖
                         }]
                     },
                     options: {
@@ -332,25 +332,36 @@
                 return movingAverage;
             }
 
-            function drawD3Candlestick(data, prices, movingAverage) {
-                const svg = d3.select("#d3CandlestickChart");
-                svg.selectAll("*").remove(); // 清空 SVG
+            // 獲取 SVG 元素
+            const svg = d3.select("#d3CandlestickChart");
+
+            // 定義全局變量
+            let candlestickData = []; // 初始化為空數組
+            let prices = []; // 初始化為空數組
+            let movingAverage = []; // 初始化為空數組
+
+            // 初始設置 SVG 寬度
+            function setSvgWidth() {
+                const containerWidth = parseInt(d3.select('.container').style('width')); // 獲取容器的寬度
+                svg.attr("width", containerWidth); // 設置 SVG 的寬度為容器的寬度
+                return containerWidth; // 返回容器寬度
+            }
+
+            // 繪製圖表的函數
+            function drawD3Candlestick(candlestickData, prices, movingAverage) {
+                const containerWidth = parseInt(d3.select('.container').style('width')); // 在這裡獲取容器寬度
 
                 const margin = { top: 20, right: 30, bottom: 30, left: 40 };
-                const containerWidth = parseInt(d3.select('.container').style('width')); // 獲取容器的寬度
                 const width = containerWidth - margin.left - margin.right; // 計算 SVG 寬度
                 const height = +svg.attr("height") - margin.top - margin.bottom; // 計算 SVG 高度
 
-                // 設置 SVG 的寬度
-                svg.attr("width", containerWidth);
-
                 const x = d3.scaleBand()
-                    .domain(data.map(d => new Date(d.x)))
-                    .range([0, width])
+                    .domain(candlestickData.map(d => new Date(d.x)))
+                    .range([0, containerWidth]) // 使用 containerWidth
                     .padding(0.1);
 
                 const y = d3.scaleLinear()
-                    .domain([d3.min(data, d => d.l), d3.max(data, d => d.h)])
+                    .domain([d3.min(candlestickData, d => d.l), d3.max(candlestickData, d => d.h)])
                     .nice()
                     .range([height, 0]);
 
@@ -391,7 +402,7 @@
 
                 // 繪製 K 線
                 g.selectAll(".candle")
-                    .data(data)
+                    .data(candlestickData)
                     .enter().append("rect")
                     .attr("class", d => d.c < d.o ? "candle up" : "candle down") // 互換顏色
                     .attr("x", d => x(new Date(d.x)))
@@ -424,7 +435,7 @@
 
                 // 繪製高低線
                 g.selectAll(".line.upper")
-                    .data(data)
+                    .data(candlestickData)
                     .enter().append("line")
                     .attr("class", "line upper") // 添加類別以便於識別
                     .attr("x1", d => x(new Date(d.x)) + x.bandwidth() / 2) // 中心位置
@@ -436,7 +447,7 @@
 
                 // 繪製下引線
                 g.selectAll(".line.lower")
-                    .data(data)
+                    .data(candlestickData)
                     .enter().append("line")
                     .attr("class", "line lower") // 添加類別以便於識別
                     .attr("x1", d => x(new Date(d.x)) + x.bandwidth() / 2) // 中心位置
@@ -448,11 +459,11 @@
 
                 // 繪製股價曲線
                 const line = d3.line()
-                    .x((d, i) => x(new Date(data[i].x)) + x.bandwidth() / 2) // 曲線的 x 值
+                    .x((d, i) => x(new Date(candlestickData[i].x)) + x.bandwidth() / 2) // 曲線的 x 值
                     .y(d => y(d.c)); // 曲線的 y 值
 
                 g.append("path")
-                    .datum(data) // 使用原始數據
+                    .datum(candlestickData) // 使用原始數據
                     .attr("class", "line")
                     .attr("d", line) // 繪製曲線
                     .attr("stroke", "#FFCE56") // 股價曲線顏色
@@ -483,8 +494,12 @@
 
             // 監聽窗口大小改變事件
             window.addEventListener('resize', () => {
+                setSvgWidth(); // 重新設置 SVG 的寬度
                 drawD3Candlestick(candlestickData, prices, movingAverage); // 重新繪製圖表
             });
+
+            // 初始設置 SVG 寬度
+            setSvgWidth();
         });
     </script>
 </body>
