@@ -11,11 +11,11 @@
             background-color: rgba(75, 192, 192, 0.2); /* 淺色背景 */
         }
         .text-red {
-  //          color: red; /* 漲的顏色 */
+            color: red; /* 設置為紅色 */
             font-weight: bold; /* 粗體 */
         }
         .text-green {
-  //          color: green; /* 跌的顏色 */
+            color: green; /* 設置為綠色 */
             font-weight: bold; /* 粗體 */
         }
         .price-cell {
@@ -25,10 +25,8 @@
             stroke-width: 1;
         }
         .up {
-  //          fill: red; /* 收盤價高於開盤價的顏色 */
         }
         .down {
-  //          fill: green; /* 收盤價低於開盤價的顏色 */
         }
         .line {
             fill: none;
@@ -36,8 +34,8 @@
         }
         .avg-line {
             fill: none;
-            stroke: orange; /* 5 日平均線顏色 */
-            stroke-width: 2;
+            stroke: green; /* 5 日平均線顏色 */
+            stroke-width: 1;
         }
         #tooltip {
             position: absolute;
@@ -107,7 +105,7 @@
     <script>
         $(document).ready(function() {
             let candlestickChart;
-            const useStaticData = true; // 設置為 true 使用靜態數據，false 使用 API
+            const useStaticData = false; // 設置為 true 使用靜態數據，false 使用 API
 
             const urlParams = new URLSearchParams(window.location.search);
             const stockCode = urlParams.get('stockCode') || '2330';
@@ -169,7 +167,6 @@
                 titleParts[0] = westernYear + ' 年 ';
                 const title = titleParts.join(' ');
                 $('#title').append(`<h2>${title}</h2>`);
-                //$('#title').append(`<h2>${westernYear} 年 ${month} 月 ${stockCode} ${stockName} 各日成交資訊</h2>`); // 新增標題
 
                 let tableHtml = `
                     <table class="table table-striped table-hover">
@@ -189,10 +186,10 @@
                         <tbody>
                 `;
 
-                const candlestickData = [];
+                const candlestickData = []; // 用於 Chart.js 的數據
+                const hoverData = []; // 用於 D3.js 的數據
                 const prices = [];
                 const movingAverage = []; // 用於存儲 5 日平均線數據
-                const labels = []; // 初始化 labels 陣列
 
                 stockData.forEach((stock, index) => {
                     const dateParts = stock[0].split('/');
@@ -202,7 +199,30 @@
                     const closingPrice = parseFloat(stock[6].replace(/,/g, ''));
                     const highestPrice = parseFloat(stock[4].replace(/,/g, ''));
                     const lowestPrice = parseFloat(stock[5].replace(/,/g, ''));
-                    const priceDifference = stock[7];
+                    const priceDifference = parseFloat(stock[7].replace(/,/g, ''));
+
+                    // 將數據推入 candlestickData 用於 Chart.js
+                    candlestickData.push({
+                        x: formattedDate,
+                        o: openingPrice,
+                        h: highestPrice,
+                        l: lowestPrice,
+                        c: closingPrice
+                    });
+
+                    // 將數據推入 hoverData 用於 D3.js
+                    hoverData.push({
+                        x: formattedDate,
+                        o: openingPrice,
+                        h: highestPrice,
+                        l: lowestPrice,
+                        c: closingPrice,
+                        change: priceDifference // 漲跌價差
+                    });
+
+                    // 設置顏色和字體樣式
+                    const priceDifferenceClass = priceDifference > 0 ? 'text-red' : (priceDifference < 0 ? 'text-green' : '');
+                    const priceCellClass = priceDifference > 0 ? 'text-red price-cell' : (priceDifference < 0 ? 'text-green price-cell' : 'price-cell');
 
                     tableHtml += `
                         <tr>
@@ -213,25 +233,17 @@
                             <td>${openingPrice}</td> <!-- 開盤價 -->
                             <td>${highestPrice}</td> <!-- 最高價 -->
                             <td>${lowestPrice}</td> <!-- 最低價 -->
-                            <td class="${priceDifference > 0 ? 'text-red' : (priceDifference < 0 ? 'text-green' : '')}">${priceDifference}</td> <!-- 漲跌價差 -->
-                            <td class="${priceDifference > 0 ? 'text-red' : (priceDifference < 0 ? 'text-green' : '')} price-cell">${closingPrice}</td> <!-- 收盤價 -->
+                            <td class="${priceDifferenceClass} font-weight-bold">${priceDifference}</td> <!-- 漲跌價差 -->
+                            <td class="${priceCellClass} font-weight-bold">${closingPrice}</td> <!-- 收盤價 -->
                         </tr>
                     `;
 
-                    candlestickData.push({
-                        x: formattedDate,
-                        o: openingPrice,
-                        h: highestPrice,
-                        l: lowestPrice,
-                        c: closingPrice
-                    });
-
                     prices.push(closingPrice);
-                    labels.push(`${year}-${dateParts[1]}-${dateParts[2]}`);
 
                     // 計算 5 日移動平均
-                    if (index >= 4) { // 確保有足夠的數據來計算 5 日平均
-                        const avg = d3.mean(prices.slice(index - 4, index + 1)); // 計算最近 5 天的平均
+                    const daysToAverage = Math.min(index + 1, 5); // 計算可用的天數
+                    if (daysToAverage > 0) {
+                        const avg = d3.mean(prices.slice(index - daysToAverage + 1, index + 1)); // 計算最近可用天數的平均
                         movingAverage.push({ x: formattedDate, y: avg });
                     } else {
                         movingAverage.push({ x: formattedDate, y: null }); // 不足 5 天時設為 null
@@ -245,10 +257,19 @@
                 $('#result').append(tableHtml);
 
                 // Chart.js K 線圖
+                createChart(candlestickData, prices);
+
+                // D3.js K 線圖
+                drawD3Candlestick(hoverData, prices, movingAverage); // 使用 hoverData
+            }
+
+            function createChart(candlestickData, prices) {
                 const ctxCandlestick = document.getElementById('candlestickChart').getContext('2d');
+                
                 if (candlestickChart) {
-                    candlestickChart.destroy();
+                    candlestickChart.destroy(); // 銷毀舊的圖表
                 }
+
                 candlestickChart = new Chart(ctxCandlestick, {
                     type: 'candlestick',
                     data: {
@@ -256,7 +277,6 @@
                             label: 'K 線圖',
                             data: candlestickData,
                             borderColor: 'rgba(75, 192, 192, 1)',
-                            borderWidth: 1,
                             backgroundColor: (context) => {
                                 const value = context.dataset.data[context.dataIndex];
                                 return value.c > value.o ? 'rgba(75, 192, 192, 1)' : 'rgba(255, 99, 132, 1)';
@@ -264,7 +284,10 @@
                         },
                         {
                             label: '收盤價',
-                            data: prices.map((price, index) => ({ x: candlestickData[index].x, y: price })), // 將收盤價轉換為 {x, y} 格式
+                            data: prices.map((price, index) => ({
+                                x: candlestickData[index].x, // 確保 x 值與 K 線圖對應
+                                y: price
+                            })),
                             borderColor: 'rgba(255, 206, 86, 1)', // 收盤價曲線顏色
                             borderWidth: 2,
                             fill: false,
@@ -279,8 +302,8 @@
                                     unit: 'day'
                                 },
                                 ticks: {
-                                    autoSkip: true, // 自動跳過沒有數據的日期
-                                    maxTicksLimit: 10 // 限制最大顯示的刻度數量
+                                    autoSkip: true,
+                                    maxTicksLimit: 10
                                 },
                                 title: {
                                     display: true,
@@ -296,9 +319,6 @@
                         }
                     }
                 });
-
-                // D3.js K 線圖
-                drawD3Candlestick(candlestickData, prices, movingAverage);
             }
 
             function calculateMovingAverage(data, period) {
@@ -337,7 +357,7 @@
                 const g = svg.append("g")
                     .attr("transform", `translate(${margin.left},${margin.top})`);
  
-                // 繪製格線
+                // 繪製格
                 g.selectAll(".grid")
                     .data(y.ticks(10)) // 設置格線的數量
                     .enter().append("line")
@@ -380,8 +400,8 @@
                     .attr("width", x.bandwidth())
                     .attr("fill", d => d.c < d.o ? "#ABDFE0" : "#FFB3C2") // 實心顏色
                     .attr("stroke", d => d.c < d.o ? "#4CC0C0" : "#FE6484") // 外框顏色
-                    .attr("stroke-width", 1) // 外框寬度
                     .on("mouseover", function(event, d) {
+                        const changeValue = d.change !== undefined ? d.change.toFixed(2) : "N/A"; // 檢查 change 是否存在
                         d3.select("#tooltip")
                             .style("visibility", "visible")
                             .html(`
@@ -390,7 +410,7 @@
                                 <strong>收盤價:</strong> ${d.c}<br>
                                 <strong>最高價:</strong> ${d.h}<br>
                                 <strong>最低價:</strong> ${d.l}<br>
-                                <strong>漲跌:</strong> ${(d.c - d.o).toFixed(2)}
+                                <strong>漲跌:</strong> ${changeValue} <!-- 使用 API 返回的漲跌價差 -->
                             `);
                     })
                     .on("mousemove", function(event) {
@@ -448,8 +468,8 @@
                     .datum(movingAverage.filter(d => d.y !== null)) // 過濾掉 null 值
                     .attr("class", "avg-line")
                     .attr("d", avgLine) // 繪製 5 日平均線
-                    .attr("stroke", "green") // 5 日平均線顏色設置為綠色
-                    .attr("fill", "none") // 不填充
+                    //.attr("stroke", "green") // 5 日平均線顏色設置為綠色
+                    //.attr("fill", "green") // 不填充
                     .attr("stroke-width", 2); // 5 日平均線寬度
             }
 

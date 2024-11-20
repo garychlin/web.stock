@@ -85,8 +85,9 @@
                         const priceCell = document.querySelector(`.price-cell[data-code="${stock}"]`);
                         
                         if (priceCell) {
-                            if (!priceFromAPI || priceFromAPI.price === null) {
-                                // 如果股價未獲取，顯示輸入框
+                            // 檢查股價是否為 null 或 0
+                            if (priceFromAPI === null || priceFromAPI.price === 0) {
+                                // 如果股價未獲取或為 0，顯示輸入框
                                 priceCell.innerHTML = `<input type="number" id="input-${stock}" placeholder="輸入股價" />`;
                             } else {
                                 // 否則顯示獲取到的股價
