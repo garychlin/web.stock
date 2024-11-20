@@ -342,7 +342,7 @@
             // 初始設置 SVG 寬度
             function setSvgWidth() {
                 const containerWidth = parseInt(d3.select('.container').style('width')); // 獲取容器的寬度
-                svg.attr("width", containerWidth); // 設置 SVG 的寬度為容器的寬度
+                svg.attr("width", containerWidth); // ���置 SVG 的寬��為容器的寬度
                 return containerWidth; // 返回容器寬度
             }
 
@@ -521,6 +521,31 @@
                     .call(d3.axisLeft(volumeY)
                         .ticks(5)
                         .tickFormat(d => d3.format(".2s")(d))); // 使用縮寫格式，如 1M, 2M 等
+
+                // 在繪製成交量圖之後，加入成交量的移動平均線
+                const volumeAvgLine = d3.line()
+                    .x(d => x(new Date(d.x)) + x.bandwidth() / 2)
+                    .y(d => volumeY(d.volumeMA));
+
+                // 計算成交量的移動平均
+                const volumeMA = hoverData.map((d, i) => {
+                    const start = Math.max(0, i - 4); // 從目前位置往前推 4 天（共 5 天）
+                    const slice = hoverData.slice(start, i + 1);
+                    const avg = slice.reduce((sum, item) => sum + item.volume, 0) / slice.length;
+                    return {
+                        x: d.x,
+                        volumeMA: avg
+                    };
+                });
+
+                // 繪製成交量移動平均線
+                volumeG.append("path")
+                    .datum(volumeMA)
+                    .attr("class", "volume-ma-line")
+                    .attr("d", volumeAvgLine)
+                    .attr("fill", "none")
+                    .attr("stroke", "green")
+                    .attr("stroke-width", 2);
             }
 
             function formatDate(dateString) {
