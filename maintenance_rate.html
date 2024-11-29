@@ -41,7 +41,9 @@
                     <td><a href="fetch_stock_twse.html?stockCode=<?= $stock['code'] ?>" target="_blank"><?= $stock['code'] ?></a></td>
                     <td><?= $stock['status'] ?></td>
                     <td class="price-cell" data-code="<?= $stock['code'] ?>"></td>
-                    <td><?= $stock['shares'] ?></td>
+                    <td class="shares-cell" data-code="<?= $stock['code'] ?>">
+                        <input type="number" id="shares-<?= $stock['code'] ?>" value="<?= $stock['shares'] ?>" placeholder="輸入股數" />
+                    </td>
                     <td class="market-value" data-code="<?= $stock['code'] ?>"></td>
                 </tr>
                 <?php endforeach; ?>
@@ -85,30 +87,21 @@
                         const priceCell = document.querySelector(`.price-cell[data-code="${stock}"]`);
                         
                         if (priceCell) {
-                            // 檢查股價是否為 null 或 0
-                            if (priceFromAPI === null || priceFromAPI.price === 0) {
-                                // 如果股價未獲取或為 0，顯示輸入框
-                                priceCell.innerHTML = `<input type="number" id="input-${stock}" placeholder="輸入股價" />`;
-                            } else {
-                                // 否則顯示獲取到的股價
-                                priceCell.textContent = priceFromAPI.price; // 直接顯示獲取到的股價
-                            }
+                            // 始終顯示股價
+                            const apiPrice = priceFromAPI && priceFromAPI.price !== null ? priceFromAPI.price : 0;
+                            priceCell.textContent = apiPrice; // 直接顯示獲取到的股價
                         }
 
                         // 計算市值並填充
                         const marketValueCell = document.querySelector(`.market-value[data-code="${stock}"]`);
                         if (marketValueCell) {
-                            const shares = <?= json_encode(array_column($stocks, 'shares')) ?>[stockData.indexOf(stock)]; // 獲取對應的股數
+                            const sharesInput = document.querySelector(`#shares-${stock}`); // 獲取股數輸入框
+                            const shares = sharesInput ? parseFloat(sharesInput.value) : 0; // 獲取用戶輸入的股數
                             
-                            // 檢查 priceFromAPI 是否存在
-                            if (priceFromAPI && priceFromAPI.price !== undefined) {
-                                const marketValue = priceFromAPI.price * shares; // 使用股數計算市值
-                                marketValueCell.textContent = marketValue.toLocaleString(); // 填充市值
-                                totalMarketValue += marketValue; // 累加總市值
-                            } else {
-                                console.warn(`No price data for stock: ${stock}`); // 輸出警告
-                                marketValueCell.textContent = "無資料"; // 或者顯示其他提示信息
-                            }
+                            // 使用 API 返回的股價計算市值
+                            const marketValue = (priceFromAPI && priceFromAPI.price !== undefined ? priceFromAPI.price : 0) * shares; // 使用股數計算市值
+                            marketValueCell.textContent = marketValue.toLocaleString(); // 填充市值
+                            totalMarketValue += marketValue; // 累加總市值
                         }
                     }
 
@@ -130,25 +123,16 @@
                 let totalMarketValue = 0; // 初始化總市值
 
                 for (const stock of stockData) {
-                    const priceCell = document.querySelector(`.price-cell[data-code="${stock}"] input`);
+                    const priceCell = document.querySelector(`.price-cell[data-code="${stock}"]`);
                     const marketValueCell = document.querySelector(`.market-value[data-code="${stock}"]`);
 
-                    // 獲取用戶輸入的股價
-                    const userInputPrice = priceCell ? parseFloat(priceCell.value) : null; // 如果沒有輸入則為 null
-                    const shares = <?= json_encode(array_column($stocks, 'shares')) ?>[stockData.indexOf(stock)]; // 獲取對應的股數
+                    // 獲取用戶輸入的股數
+                    const sharesInput = document.querySelector(`#shares-${stock}`);
+                    const shares = sharesInput ? parseFloat(sharesInput.value) : 0; // 如果沒有輸入則為 0
 
-                    // 直接使用用戶輸入的股價或從 API 獲取的股價
-                    const stockPrice = userInputPrice !== null 
-                        ? userInputPrice 
-                        : (marketValueCell 
-                            ? parseFloat(marketValueCell.textContent.replace(/,/g, '').trim()) / shares 
-                            : 0); // 如果沒有輸入，使用之前的股價
-                    
-                    // 確保股價有效
-                    if (isNaN(stockPrice) || stockPrice <= 0) {
-                        console.error(`Invalid stock price for ${stock}: ${stockPrice}`);
-                        continue; // 跳過此股票的計算
-                    }
+                    // 使用 API 返回的股價計算市值
+                    const priceFromAPI = apiData.prices[stock]; // 從 API 獲取的股價
+                    const stockPrice = (priceFromAPI && priceFromAPI.price !== undefined) ? priceFromAPI.price : 0; // 使用 API 股價
 
                     const marketValue = stockPrice * shares; // 使用股數計算市值
 
