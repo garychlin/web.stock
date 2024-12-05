@@ -10,8 +10,11 @@ $stocks = [
     ['name' => '創意', 'code' => '3443', 'status' => '1023 質借中', 'shares' => 1000],
     ['name' => '士電', 'code' => '1503', 'status' => '1023 質借中', 'shares' => 3000],
     ['name' => '中興電', 'code' => '1513', 'status' => '1023 質借中', 'shares' => 6000],
-    ['name' => '雙鴻', 'code' => '3324', 'status' => '0909 擔保中', 'shares' => 2000, 'type' => 'otc'],
-    ['name' => '奇鋐', 'code' => '3017', 'status' => '0909 擔保中', 'shares' => 2000],
+    //['name' => '雙鴻', 'code' => '3324', 'status' => '0909 擔保中 1205 贖回', 'shares' => 0, 'type' => 'otc'],
+    //['name' => '奇鋐', 'code' => '3017', 'status' => '0909 擔保中 1205 贖回', 'shares' => 0],
+    ['name' => '森葳能源', 'code' => '6806', 'status' => '1205 擔保中', 'shares' => 4000],
+    ['name' => '所羅門', 'code' => '2359', 'status' => '1205 擔保中', 'shares' => 4000],
+    ['name' => '聯詠', 'code' => '3034', 'status' => '1205 擔保中', 'shares' => 2000],
 ];
 
 $loanAmount = 6700000; // 新增借款金額變數
